@@ -1,0 +1,29 @@
+{
+  "name": "storello",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "dist/store.js",
+      "types": "dist/store.d.ts"
+    },
+    "./lit": {
+      "import": "dist/lit.js",
+      "types": "dist/lit.d.ts"
+    }
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2",
+    "vite": "^5.2.0"
+  },
+  "dependencies": {
+    "@lit/context": "^1.1.1",
+    "lit": "^3.1.3"
+  }
+}
