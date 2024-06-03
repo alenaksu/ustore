@@ -2,14 +2,12 @@ import { ReactiveElement } from 'lit';
 import { Context, ContextConsumer, createContext, provide } from '@lit/context';
 import { Store } from './store';
 
-const storeContext: Context<unknown, Store<any>> = createContext(
-  Symbol('store')
-);
+const storeContext: Context<unknown, Store<any>> = createContext(Symbol('store'));
 
 export const consumeState = () =>
   function <C extends ReactiveElement>(
     target: ClassAccessorDecoratorTarget<C, unknown>,
-    propertyKey: PropertyKey
+    propertyKey: PropertyKey,
   ) {
     const ctor = target.constructor as typeof ReactiveElement;
     ctor.addInitializer((element: ReactiveElement): void => {

@@ -11,8 +11,6 @@ export class Time extends LitElement {
 
   render() {
     console.log('render');
-    return html`
-      <h1>${new Date(this.state.time).toLocaleTimeString()}</h1>
-    `;
+    return html` <h1>${new Date(this.state.time).toLocaleTimeString()}</h1> `;
   }
 }

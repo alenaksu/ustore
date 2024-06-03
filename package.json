@@ -1,29 +1,46 @@
 {
-  "name": "storello",
+  "name": "@alenaksu/storello",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "exports": {
     ".": {
-      "import": "dist/store.js",
-      "types": "dist/store.d.ts"
+      "import": "./dist/store.js",
+      "types": "./dist/store.d.ts"
     },
     "./lit": {
-      "import": "dist/lit.js",
-      "types": "dist/lit.d.ts"
+      "import": "./dist/lit.js",
+      "types": "./dist/lit.d.ts"
+    },
+    "./react": {
+      "import": "./dist/react.js",
+      "types": "./dist/react.d.ts"
     }
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build": "tsup",
+    "preview": "vite preview",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@lit/context": "^1.1.1",
+    "@types/react": "^18.3.3",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.5",
+    "lit": "^3.1.3",
+    "prettier": "3.3.0",
+    "react": "^18.3.1",
+    "tsup": "^8.1.0",
     "typescript": "^5.2.2",
     "vite": "^5.2.0"
   },
-  "dependencies": {
+  "peerDependencies": {
     "@lit/context": "^1.1.1",
-    "lit": "^3.1.3"
+    "lit": "^3.1.3",
+    "react": "^18.3.1"
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
   }
 }

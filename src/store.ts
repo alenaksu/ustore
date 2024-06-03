@@ -4,13 +4,13 @@ interface UpdateHandler {
   (): void;
 }
 
-export interface Store<S extends object> {
+export interface Store<S extends Record<string, unknown> = {}> {
   state: S;
   subscribe(handler: UpdateHandler): S;
   unsubscribe(state: S): void;
 }
 
-export const createStore = <S extends object>(initialState: S): Store<S> => {
+export const createStore = <S extends Record<string, unknown>>(initialState: S): Store<S> => {
   /**
    * The state object is sealed to prevent modification of the state
    */
