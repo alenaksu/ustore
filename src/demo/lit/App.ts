@@ -1,6 +1,6 @@
 import { LitElement, html } from 'lit';
-import { provideState } from '../lit';
-import { createStore } from '../store';
+import { provideState } from '../../lit';
+import { createStore } from '../../store';
 import { customElement } from 'lit/decorators.js';
 
 @customElement('my-app')

@@ -22,7 +22,7 @@ export const createProxyHandler = <S extends object>(
 
       options.onRead?.(propertyPath);
 
-      return isObject(value) ? createStateProxy<typeof value>(value, options, propertyPath) : value;
+      return isObject(value) ? createProxy<typeof value>(value, options, propertyPath) : value;
     },
     set(target, propertyName: string, newValue, receiver) {
       const propertyPath = path ? `${path}.${propertyName}` : propertyName;
@@ -34,13 +34,13 @@ export const createProxyHandler = <S extends object>(
   };
 };
 
-export const createStateProxy = <S extends object>(
+export const createProxy = <S extends object>(
   state: S,
   options: StateProxyOptions = {},
   path = '',
 ) => new Proxy(state, createProxyHandler(options, path));
 
-export const createStateRevocableProxy = <S extends object>(
+export const createRevocableProxy = <S extends object>(
   state: S,
   options: StateProxyOptions = {},
   path = '',

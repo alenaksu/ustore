@@ -1,6 +1,6 @@
 import { LitElement, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { consumeState } from '../lit';
+import { consumeState } from '../../lit';
 
 @customElement('my-counter')
 export class Counter extends LitElement {
@@ -10,7 +10,6 @@ export class Counter extends LitElement {
   };
 
   render() {
-    console.log('render');
     return html`
       <div>Clicked: ${this.state.count} times</div>
       <button @click="${() => this.state.count++}">Click Me</button>

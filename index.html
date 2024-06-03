@@ -7,10 +7,17 @@
     <title>Vite + TS</title>
   </head>
   <body>
-    <my-app id="app">
-      <my-time></my-time>
-      <my-counter></my-counter>
-    </my-app>
-    <script type="module" src="/src/test/main.ts"></script>
+    <div id="app">
+      <div id="lit-demo">
+        <my-app>
+          <my-time></my-time>
+          <my-counter></my-counter>
+        </my-app>
+      </div>
+
+      <div id="react-demo"></div>
+    </div>
+
+    <script type="module" src="/src/demo/main.ts"></script>
   </body>
 </html>

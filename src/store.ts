@@ -1,4 +1,4 @@
-import { createStateProxy, createStateRevocableProxy } from './state';
+import { createProxy, createRevocableProxy } from './state';
 
 interface UpdateHandler {
   (): void;
@@ -74,7 +74,7 @@ export const createStore = <S extends Record<string, unknown>>(initialState: S):
   /**
    * Create a public state object that can be read from and written to
    */
-  const state = createStateProxy(rawState, {
+  const state = createProxy(rawState, {
     onWrite,
   });
 
@@ -90,7 +90,7 @@ export const createStore = <S extends Record<string, unknown>>(initialState: S):
         dependencies.get(handler)!.add(propertyPath);
       };
 
-      const { proxy, revoke } = createStateRevocableProxy(rawState, {
+      const { proxy, revoke } = createRevocableProxy(rawState, {
         onRead,
         onWrite,
       });

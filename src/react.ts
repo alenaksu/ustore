@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { Store } from './store';
 
 const StoreContext = createContext<Store | null>(null);
@@ -12,7 +12,7 @@ const useRerender = () => {
 
 export const StoreProvider = StoreContext.Provider;
 
-export const useStore = () => {
+export const useStore = <S>() => {
   const store = useContext(StoreContext);
   const rerender = useRerender();
   const state = useMemo(() => {
@@ -20,10 +20,16 @@ export const useStore = () => {
 
     const state = store.subscribe(rerender);
 
+    return state;
+  }, []);
+
+  useEffect(() => {
     return () => {
-      store?.unsubscribe(state);
+      if (store && state) {
+        store.unsubscribe(state);
+      }
     };
   }, []);
 
-  return state;
+  return state as S;
 };
