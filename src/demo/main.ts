@@ -25,7 +25,7 @@ const fpsLabel = document.getElementById('fps-val')!;
 const mpsLabel = document.getElementById('mps-val')!;
 const totalMutationsLabel = document.getElementById('total-mutations-val')!;
 
-// Handle User Input Events -> Write directly to Storello State
+// Handle User Input Events -> Write directly to uStore State
 chaosToggle.addEventListener('change', () => {
   demoStore.state.chaosMode = chaosToggle.checked;
 });
