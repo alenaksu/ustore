@@ -4,18 +4,66 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + TS</title>
+    <title>Storello — Ultra-High Performance Reactive Store</title>
   </head>
   <body>
     <div id="app">
-      <div id="lit-demo">
-        <my-app>
-          <my-time></my-time>
-          <my-counter></my-counter>
-        </my-app>
-      </div>
+      <!-- Performance Header & Control Deck -->
+      <header>
+        <div class="header-top">
+          <div class="header-title">
+            <h1>Storello</h1>
+            <p>Framework-agnostic, hyper-performant... and some other fancy buzzwords</p>
+          </div>
 
-      <div id="react-demo"></div>
+          <div class="metrics-row">
+            <div class="metric-card">
+              <span class="metric-label">FPS</span>
+              <span id="fps-val" class="metric-value fps-good">60</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Mutations/s</span>
+              <span id="mps-val" class="metric-value mps">0</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Total Mut</span>
+              <span id="total-mutations-val" class="metric-value">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls-board">
+          <div class="control-item">
+            <label>Chaos Mode</label>
+            <label class="switch-toggle">
+              <input type="checkbox" id="chaos-toggle" />
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <div class="control-item">
+            <label for="density-slider"
+              >Chaos Intensity (Mutations/Frame): <span id="density-val">15</span></label
+            >
+            <input type="range" id="density-slider" min="1" max="100" value="15" />
+          </div>
+
+          <div class="control-item" style="margin-left: auto">
+            <button id="reset-btn" class="btn-secondary">Reset Values</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Side-by-side framework panels -->
+      <div class="panels-container">
+        <!-- React Side -->
+        <div id="react-demo"></div>
+
+        <!-- Lit Side -->
+        <div id="lit-demo">
+          <my-app></my-app>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/src/demo/main.ts"></script>

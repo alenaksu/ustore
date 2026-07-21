@@ -1,35 +1,28 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Store } from './store';
 
-const StoreContext = createContext<Store | null>(null);
+/**
+ * A React hook to consume and track the state of a Store.
+ *
+ * The hook automatically tracks which properties of the state are read during
+ * component rendering, and will re-render the component when those specific
+ * properties are updated.
+ *
+ * @param store - The Store instance to track.
+ * @returns A tracked state proxy.
+ */
+export const useStore = <S extends Record<string, any>>(store: Store<S>): S => {
+  const [, force] = useState(0);
 
-const useRerender = () => {
-  const [, rerender] = useState({});
-  return () => {
-    rerender({});
-  };
-};
-
-export const StoreProvider = StoreContext.Provider;
-
-export const useStore = <S>() => {
-  const store = useContext(StoreContext);
-  const rerender = useRerender();
-  const state = useMemo(() => {
-    if (!store) return;
-
-    const state = store.subscribe(rerender);
-
-    return state;
-  }, []);
+  const { state, detach } = useMemo(() => {
+    return store.attach(() => force((n) => n + 1));
+  }, [store]);
 
   useEffect(() => {
     return () => {
-      if (store && state) {
-        store.unsubscribe(state);
-      }
+      detach();
     };
-  }, []);
+  }, [detach]);
 
-  return state as S;
+  return state;
 };
