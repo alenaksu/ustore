@@ -2,12 +2,12 @@
 
 // src/state.ts
 var isProxyable = (value) => {
-  if (value === null || typeof value !== 'object') return false;
+  if (value === null || typeof value !== "object") return false;
   if (Array.isArray(value)) return true;
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 };
-var createProxyHandler = (options, path = '') => {
+var createProxyHandler = (options, path = "") => {
   return {
     get(target, propertyName, receiver) {
       const value = Reflect.get(target, propertyName, receiver);
@@ -19,13 +19,11 @@ var createProxyHandler = (options, path = '') => {
       const propertyPath = path ? `${path}.${propertyName}` : propertyName;
       options.onWrite?.(propertyPath);
       return Reflect.set(target, propertyName, newValue, receiver);
-    },
+    }
   };
 };
-var createProxy = (state, options = {}, path = '') =>
-  new Proxy(state, createProxyHandler(options, path));
-var createRevocableProxy = (state, options = {}, path = '') =>
-  Proxy.revocable(state, createProxyHandler(options, path));
+var createProxy = (state, options = {}, path = "") => new Proxy(state, createProxyHandler(options, path));
+var createRevocableProxy = (state, options = {}, path = "") => Proxy.revocable(state, createProxyHandler(options, path));
 
 // src/store.ts
 var createStore = (initialState) => {
@@ -49,7 +47,7 @@ var createStore = (initialState) => {
     }
     if (listeners.size && changed.length) {
       const event = {
-        paths: changed,
+        paths: changed
       };
       for (const listener of listeners) {
         listener(event);
@@ -66,7 +64,7 @@ var createStore = (initialState) => {
     queueMicrotask(flush);
   };
   const state = createProxy(rawState, {
-    onWrite,
+    onWrite
   });
   return {
     state,
@@ -81,7 +79,7 @@ var createStore = (initialState) => {
       };
       const { proxy, revoke } = createRevocableProxy(rawState, {
         onRead,
-        onWrite,
+        onWrite
       });
       let detached = false;
       const detach = () => {
@@ -106,7 +104,7 @@ var createStore = (initialState) => {
       return () => {
         listeners.delete(listener);
       };
-    },
+    }
   };
 };
 

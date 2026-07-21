@@ -10,8 +10,6 @@ import { Store } from './store.cjs';
  *
  * @param store - The Store instance to track.
  */
-declare const consumeStore: <S extends Record<string, any>>(
-  store: Store<S>,
-) => <C extends ReactiveElement>(target: C, propertyKey: PropertyKey) => void;
+declare const consumeStore: <S extends Record<string, any>>(store: Store<S>) => <C extends ReactiveElement>(target: C, propertyKey: PropertyKey) => void;
 
 export { consumeStore };
