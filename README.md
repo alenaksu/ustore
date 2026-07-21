@@ -1,8 +1,8 @@
-# Storello 🗃️
+# uStore 🗃️
 
-Storello is a framework-agnostic, ultra-lightweight (under 1KB gzipped), surgically-precise reactive state manager for modern JavaScript and TypeScript applications.
+uStore is a framework-agnostic reactive state manager for modern JavaScript and TypeScript applications.
 
-By leveraging ES6 Proxies, Storello automatically tracks property read-paths at render time and schedules precise updates **only** when those specific paths are mutated. It eliminates the virtual DOM reconciliation tax, side-effects overhead, and manual selector definitions found in traditional state managers.
+By leveraging ES6 Proxies, uStore tracks property read-paths at render time and schedules updates when those specific paths are mutated. This avoids full virtual DOM reconciliation and manual selector definitions.
 
 ---
 
@@ -10,10 +10,10 @@ By leveraging ES6 Proxies, Storello automatically tracks property read-paths at 
 
 ### 1. Creating a Store
 
-Define your initial state and instantiate the store. Storello works with any plain JavaScript object.
+Define your initial state and instantiate the store. uStore works with any plain JavaScript object.
 
 ```typescript
-import { createStore } from '@alenaksu/storello';
+import { createStore } from '@alenaksu/ustore';
 
 export interface UserState {
   name: string;
@@ -41,7 +41,7 @@ export const store = createStore<AppState>({
 Import `useStore` to consume the store in React. Property reads are automatically tracked during the component's render execution.
 
 ```tsx
-import { useStore } from '@alenaksu/storello/react';
+import { useStore } from '@alenaksu/ustore/react';
 import { store } from './store';
 
 export const Counter = () => {
@@ -60,12 +60,12 @@ export const Counter = () => {
 
 ### 3. Lit Integration
 
-Use the `@consumeStore` decorator to bind a property to a Storello store in a custom element. The element connects and disconnects subscriptions automatically with its lifecycle.
+Use the `@consumeStore` decorator to bind a property to a uStore store in a custom element. The element connects and disconnects subscriptions automatically with its lifecycle.
 
 ```typescript
 import { LitElement, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { consumeStore } from '@alenaksu/storello/lit';
+import { consumeStore } from '@alenaksu/ustore/lit';
 import { store } from './store';
 
 @customElement('my-counter')
@@ -104,11 +104,11 @@ detach();
 
 ## ⚠️ Constraints & Caveats
 
-To maintain its hyper-performant, zero-overhead architecture, Storello operates under a specific mental model:
+To ensure correct path tracking and updates, uStore operates under a specific mental model:
 
 ### 1. The Exact Mutation Invariant
 
-Storello assumes that the state's shape is static and properties are mutated directly.
+uStore assumes that the state's shape is static and properties are mutated directly.
 
 - **Do:** Mutate properties directly.
   ```typescript
