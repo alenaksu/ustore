@@ -130,22 +130,9 @@ Subscription matching is precise and O(1).
 
 ### 3. Array Operations
 
-When rendering lists, map over static lists of keys/indices, and let individual list items subscribe directly to their specific indexes.
+In uStore, arrays are treated as atomic values. Therefore, only mutating the array itself (or re-assigning it) will trigger updates. Mutating individual elements or nested paths inside an array will not trigger item-level updates.
 
-- **Do:**
-  ```tsx
-  // Parent maps over indices and passes them to child items
-  const indices = [0, 1, 2];
-  return indices.map((index) => <Item key={index} index={index} />);
-  ```
-  ```tsx
-  // Child subscribes to its exact path
-  const Item = ({ index }) => {
-    const state = useStore(store);
-    const item = state.list[index];
-    return <div>{item.value}</div>;
-  };
-  ```
+To update array-based state, mutate the array reference or re-assign the array itself.
 
 ---
 

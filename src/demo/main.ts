@@ -61,7 +61,7 @@ const runTick = () => {
     lastTimeUpdate = now;
   }
 
-  // If chaos is enabled, apply targeted high-frequency mutations to store leaves
+  // If chaos is enabled, apply targeted high-frequency mutations to store properties
   if (demoStore.state.chaosMode) {
     const density = demoStore.state.chaosDensity;
     const cells = demoStore.state.grid.cells;
