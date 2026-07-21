@@ -39,11 +39,31 @@ export const ReactCell = ({ index }: { index: number }) => {
   );
 };
 
+const GlobalCounterWidget = () => {
+  const state = useStore(demoStore);
+  return (
+    <div className="widget-box">
+      <span className="widget-label">Global Counter</span>
+      <span className="widget-content">{state.count}</span>
+      <button onClick={() => demoStore.state.count++}>+1 Count</button>
+    </div>
+  );
+};
+
+const TimeSyncWidget = () => {
+  const state = useStore(demoStore);
+  return (
+    <div className="widget-box">
+      <span className="widget-label">Time Sync</span>
+      <span className="widget-content">{new Date(state.time).toLocaleTimeString()}</span>
+    </div>
+  );
+};
+
 export const App = () => {
   const appRenderCount = useRef(0);
   appRenderCount.current++;
 
-  const state = useStore(demoStore);
   const indices = useRef(Array.from({ length: TOTAL_CELLS }, (_, i) => i));
 
   return (
@@ -62,15 +82,8 @@ export const App = () => {
       </div>
 
       <div className="widgets-row">
-        <div className="widget-box">
-          <span className="widget-label">Global Counter</span>
-          <span className="widget-content">{state.count}</span>
-          <button onClick={() => demoStore.state.count++}>+1 Count</button>
-        </div>
-        <div className="widget-box">
-          <span className="widget-label">Time Sync</span>
-          <span className="widget-content">{new Date(state.time).toLocaleTimeString()}</span>
-        </div>
+        <GlobalCounterWidget />
+        <TimeSyncWidget />
       </div>
     </div>
   );

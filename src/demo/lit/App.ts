@@ -51,11 +51,47 @@ export class LitCell extends LitElement {
   }
 }
 
-@customElement('my-app')
-export class App extends LitElement {
+@customElement('lit-counter-widget')
+export class LitCounterWidget extends LitElement {
   @consumeStore(demoStore)
   state!: typeof demoStore.state;
 
+  createRenderRoot() {
+    return this;
+  }
+
+  render() {
+    return html`
+      <div class="widget-box">
+        <span class="widget-label">Global Counter</span>
+        <span class="widget-content">${this.state.count}</span>
+        <button @click="${() => demoStore.state.count++}">+1 Count</button>
+      </div>
+    `;
+  }
+}
+
+@customElement('lit-time-widget')
+export class LitTimeWidget extends LitElement {
+  @consumeStore(demoStore)
+  state!: typeof demoStore.state;
+
+  createRenderRoot() {
+    return this;
+  }
+
+  render() {
+    return html`
+      <div class="widget-box">
+        <span class="widget-label">Time Sync</span>
+        <span class="widget-content"> ${new Date(this.state.time).toLocaleTimeString()} </span>
+      </div>
+    `;
+  }
+}
+
+@customElement('my-app')
+export class App extends LitElement {
   private appRenderCount = 0;
 
   createRenderRoot() {
@@ -80,15 +116,8 @@ export class App extends LitElement {
         </div>
 
         <div class="widgets-row">
-          <div class="widget-box">
-            <span class="widget-label">Global Counter</span>
-            <span class="widget-content">${this.state.count}</span>
-            <button @click="${() => demoStore.state.count++}">+1 Count</button>
-          </div>
-          <div class="widget-box">
-            <span class="widget-label">Time Sync</span>
-            <span class="widget-content"> ${new Date(this.state.time).toLocaleTimeString()} </span>
-          </div>
+          <lit-counter-widget></lit-counter-widget>
+          <lit-time-widget></lit-time-widget>
         </div>
       </div>
     `;
