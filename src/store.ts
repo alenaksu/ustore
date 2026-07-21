@@ -4,90 +4,130 @@ interface UpdateHandler {
   (): void;
 }
 
-export interface Store<S extends Record<string, unknown> = {}> {
-  state: S;
-  subscribe(handler: UpdateHandler): S;
-  unsubscribe(state: S): void;
+/**
+ * Event payload emitted to registered change listeners when the store state changes.
+ */
+export interface ChangeEvent {
+  /** The paths of the properties that were mutated. */
+  paths: string[];
 }
 
-export const createStore = <S extends Record<string, unknown>>(initialState: S): Store<S> => {
+/**
+ * A callback function triggered when the store state is mutated.
+ */
+export type ChangeListener = (event: ChangeEvent) => void;
+
+/**
+ * An attachment containing the tracked state proxy and its detach function.
+ */
+export interface Attachment<S> {
+  /** The tracked state proxy for a specific consumer. */
+  state: S;
+  /** Unsubscribes the tracked state proxy, stopping further updates to its handler. */
+  detach: () => void;
+}
+
+/**
+ * A reactive state container.
+ */
+export interface Store<S extends Record<string, any> = {}> {
   /**
-   * The state object is sealed to prevent modification of the state
+   * The root state proxy. Reading from or writing to this proxy
+   * will not trigger subscriptions; use `attach` to obtain a tracked proxy.
    */
-  const rawState = Object.seal(structuredClone(initialState));
-  /**
-   * The dependencies map keeps track of which properties are read by each subscription
-   */
-  const dependencies = new Map<UpdateHandler, Set<string>>();
-  /**
-   * The subscriptions map keeps track of the subscriptions and their associated handlers and revokers
-   */
-  const subscriptions = new WeakMap<
-    S,
-    {
-      handler: UpdateHandler;
-      revoke: () => void;
-    }
-  >();
+  state: S;
 
   /**
-   * Keeps track of which properties have been updated since the last update
+   * Creates a tracked state proxy bound to a change handler.
+   * Accessing properties on the returned `state` automatically registers them for updates.
+   *
+   * @param handler - The callback function to run when tracked properties change.
+   * @returns An attachment holding the tracked state proxy and its detach function.
    */
+  attach(handler: UpdateHandler): Attachment<S>;
+
+  /**
+   * Registers a listener to be notified of all state changes across the store.
+   *
+   * @param listener - Callback invoked with changed paths.
+   * @returns A function to unregister the listener.
+   */
+  onChange(listener: ChangeListener): () => void;
+}
+
+/**
+ * Creates a reactive store with a deep-reactive state container.
+ *
+ * @param initialState - The initial state object.
+ * @returns A new Store instance.
+ */
+export const createStore = <S extends Record<string, any>>(initialState: S): Store<S> => {
+  const rawState = Object.seal(structuredClone(initialState));
+
+  /**
+   * Reverse-mapping for fast and correct update lookup
+   */
+  const pathToHandlers = new Map<string, Set<UpdateHandler>>();
+
+  const listeners = new Set<ChangeListener>();
+
   const pendingPropertyUpdates = new Set<string>();
   let isUpdatePending = false;
 
-  /**
-   * Called whenever a property is written to the state
-   */
-  const onWrite = (propertyPath: string) => {
-    scheduleUpdate(propertyPath);
+  const flush = () => {
+    isUpdatePending = false;
+    const changed = Array.from(pendingPropertyUpdates);
+    pendingPropertyUpdates.clear();
+
+    const handlersToNotify = new Set<UpdateHandler>();
+    for (const pendingPath of changed) {
+      const handlers = pathToHandlers.get(pendingPath);
+      if (handlers) {
+        for (const handler of handlers) {
+          handlersToNotify.add(handler);
+        }
+      }
+    }
+
+    if (listeners.size && changed.length) {
+      const event: ChangeEvent = {
+        paths: changed,
+      };
+      for (const listener of listeners) {
+        listener(event);
+      }
+    }
+
+    for (const handler of handlersToNotify) {
+      handler();
+    }
   };
 
-  /**
-   * Schedules an update to be run in the next microtask. If an update is already pending, it will be skipped.
-   */
-  const scheduleUpdate = async (propertyPath: string) => {
+  const onWrite = (propertyPath: string) => {
     pendingPropertyUpdates.add(propertyPath);
 
     if (isUpdatePending) return;
 
     isUpdatePending = true;
-    queueMicrotask(() => {
-      for (const [handler, propertyPaths] of dependencies) {
-        const handlerUpdates = new Set<string>();
-        for (const propertyPath of propertyPaths) {
-          if (pendingPropertyUpdates.has(propertyPath)) {
-            handlerUpdates.add(propertyPath);
-          }
-        }
-
-        if (handlerUpdates.size) {
-          handler();
-        }
-      }
-
-      pendingPropertyUpdates.clear();
-      isUpdatePending = false;
-    });
+    queueMicrotask(flush);
   };
 
-  /**
-   * Create a public state object that can be read from and written to
-   */
   const state = createProxy(rawState, {
     onWrite,
   });
 
   return {
     state,
-    /**
-     * Returns a state object where every read operation is tracked and triggers an update when a property is written to
-     */
-    subscribe(handler: UpdateHandler) {
-      dependencies.set(handler, new Set());
+    attach(handler: UpdateHandler) {
+      const readPaths = new Set<string>();
 
       const onRead = (propertyPath: string) => {
-        dependencies.get(handler)!.add(propertyPath);
+        readPaths.add(propertyPath);
+
+        if (!pathToHandlers.has(propertyPath)) {
+          pathToHandlers.set(propertyPath, new Set());
+        }
+        pathToHandlers.get(propertyPath)!.add(handler);
       };
 
       const { proxy, revoke } = createRevocableProxy(rawState, {
@@ -95,19 +135,32 @@ export const createStore = <S extends Record<string, unknown>>(initialState: S):
         onWrite,
       });
 
-      subscriptions.set(proxy, { handler, revoke });
+      let detached = false;
+      const detach = () => {
+        if (detached) return;
+        detached = true;
 
-      return proxy;
+        revoke();
+
+        for (const path of readPaths) {
+          const handlers = pathToHandlers.get(path);
+          if (handlers) {
+            handlers.delete(handler);
+            if (handlers.size === 0) {
+              pathToHandlers.delete(path);
+            }
+          }
+        }
+        readPaths.clear();
+      };
+
+      return { state: proxy, detach };
     },
-    /**
-     * Unsubscribes from a state object updates. The state object will no longer be tracked for updates.
-     */
-    unsubscribe(state: S) {
-      const { handler, revoke } = subscriptions.get(state)!;
-
-      revoke();
-      dependencies.delete(handler);
-      subscriptions.delete(state);
+    onChange(listener: ChangeListener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
     },
   };
 };
