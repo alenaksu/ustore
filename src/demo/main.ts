@@ -135,3 +135,10 @@ setInterval(() => {
   mutationCountInInterval = 0;
   lastMpsMeasure = now;
 }, 500);
+
+demoStore.watch(
+  (state) => state.chaosMode,
+  (value, prevValue) => {
+    console.log(`Chaos Mode changed from ${prevValue} to ${value}`);
+  },
+);
