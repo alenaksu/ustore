@@ -53,6 +53,15 @@ export interface Store<S extends Record<string, any> = {}> {
    * @returns A function to unregister the listener.
    */
   onChange(listener: ChangeListener): () => void;
+
+  /**
+   * Registers a listener to be notified when the value of a specific derived property changes.
+   *
+   * @param selector - A function that selects a derived value from the state.
+   * @param handler - Callback invoked when the selected value changes.
+   * @returns A function to unregister the listener.
+   */
+  watch<T>(selector: (state: S) => T, handler: (value: T, prevValue: T) => void): () => void;
 }
 
 /**
@@ -81,18 +90,20 @@ export const createStore = <S extends Record<string, any>>(initialState: S): Sto
 
     const handlersToNotify = new Set<UpdateHandler>();
     for (const pendingPath of changed) {
-      const handlers = pathToHandlers.get(pendingPath);
-      if (handlers) {
-        for (const handler of handlers) {
-          handlersToNotify.add(handler);
-        }
+      const handlers = pathToHandlers.get(pendingPath) ?? [];
+      for (const handler of handlers) {
+        handlersToNotify.add(handler);
       }
+
+      // Clear the handlers for this path after notifying them, so that they can be re-registered if they read the property again during their update.
+      pathToHandlers.delete(pendingPath);
     }
 
     if (listeners.size && changed.length) {
       const event: ChangeEvent = {
         paths: changed,
       };
+
       for (const listener of listeners) {
         listener(event);
       }
@@ -116,51 +127,75 @@ export const createStore = <S extends Record<string, any>>(initialState: S): Sto
     onWrite,
   });
 
-  return {
-    state,
-    attach(handler: UpdateHandler) {
-      const readPaths = new Set<string>();
+  const attach = (handler: UpdateHandler): Attachment<S> => {
+    const readPaths = new Set<string>();
 
-      const onRead = (propertyPath: string) => {
-        readPaths.add(propertyPath);
+    const onRead = (propertyPath: string) => {
+      readPaths.add(propertyPath);
 
-        if (!pathToHandlers.has(propertyPath)) {
-          pathToHandlers.set(propertyPath, new Set());
-        }
-        pathToHandlers.get(propertyPath)!.add(handler);
-      };
+      if (!pathToHandlers.has(propertyPath)) {
+        pathToHandlers.set(propertyPath, new Set());
+      }
+      pathToHandlers.get(propertyPath)!.add(handler);
+    };
 
-      const { proxy, revoke } = createRevocableProxy(rawState, {
-        onRead,
-        onWrite,
-      });
+    const { proxy, revoke } = createRevocableProxy(rawState, {
+      onRead,
+      onWrite,
+    });
 
-      let detached = false;
-      const detach = () => {
-        if (detached) return;
-        detached = true;
+    let detached = false;
+    const detach = () => {
+      if (detached) return;
+      detached = true;
 
-        revoke();
+      revoke();
 
-        for (const path of readPaths) {
-          const handlers = pathToHandlers.get(path);
-          if (handlers) {
-            handlers.delete(handler);
-            if (handlers.size === 0) {
-              pathToHandlers.delete(path);
-            }
+      for (const path of readPaths) {
+        const handlers = pathToHandlers.get(path);
+        if (handlers) {
+          handlers.delete(handler);
+          if (handlers.size === 0) {
+            pathToHandlers.delete(path);
           }
         }
-        readPaths.clear();
-      };
+      }
+      readPaths.clear();
+    };
 
-      return { state: proxy, detach };
-    },
-    onChange(listener: ChangeListener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
+    return { state: proxy, detach };
+  };
+
+  const onChange = (listener: ChangeListener): (() => void) => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  };
+
+  const watch = <T>(
+    selector: (state: S) => T,
+    listener: (value: T, prevValue: T) => void,
+  ): (() => void) => {
+    let prevValue: T;
+    const { detach, state: attachedState } = attach(() => {
+      const newValue = selector(attachedState);
+      if (newValue !== prevValue) {
+        listener(newValue, prevValue);
+        prevValue = newValue;
+      }
+    });
+
+    // Initialize the last value and invoke the handler for the first time
+    prevValue = selector(attachedState);
+
+    return detach;
+  };
+
+  return {
+    state,
+    attach,
+    onChange,
+    watch,
   };
 };
