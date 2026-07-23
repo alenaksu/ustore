@@ -38,12 +38,11 @@ var createStore = (initialState) => {
     pendingPropertyUpdates.clear();
     const handlersToNotify = /* @__PURE__ */ new Set();
     for (const pendingPath of changed) {
-      const handlers = pathToHandlers.get(pendingPath);
-      if (handlers) {
-        for (const handler of handlers) {
-          handlersToNotify.add(handler);
-        }
+      const handlers = pathToHandlers.get(pendingPath) ?? [];
+      for (const handler of handlers) {
+        handlersToNotify.add(handler);
       }
+      pathToHandlers.delete(pendingPath);
     }
     if (listeners.size && changed.length) {
       const event = {
@@ -66,45 +65,60 @@ var createStore = (initialState) => {
   const state = createProxy(rawState, {
     onWrite
   });
-  return {
-    state,
-    attach(handler) {
-      const readPaths = /* @__PURE__ */ new Set();
-      const onRead = (propertyPath) => {
-        readPaths.add(propertyPath);
-        if (!pathToHandlers.has(propertyPath)) {
-          pathToHandlers.set(propertyPath, /* @__PURE__ */ new Set());
-        }
-        pathToHandlers.get(propertyPath).add(handler);
-      };
-      const { proxy, revoke } = createRevocableProxy(rawState, {
-        onRead,
-        onWrite
-      });
-      let detached = false;
-      const detach = () => {
-        if (detached) return;
-        detached = true;
-        revoke();
-        for (const path of readPaths) {
-          const handlers = pathToHandlers.get(path);
-          if (handlers) {
-            handlers.delete(handler);
-            if (handlers.size === 0) {
-              pathToHandlers.delete(path);
-            }
+  const attach = (handler) => {
+    const readPaths = /* @__PURE__ */ new Set();
+    const onRead = (propertyPath) => {
+      readPaths.add(propertyPath);
+      if (!pathToHandlers.has(propertyPath)) {
+        pathToHandlers.set(propertyPath, /* @__PURE__ */ new Set());
+      }
+      pathToHandlers.get(propertyPath).add(handler);
+    };
+    const { proxy, revoke } = createRevocableProxy(rawState, {
+      onRead,
+      onWrite
+    });
+    let detached = false;
+    const detach = () => {
+      if (detached) return;
+      detached = true;
+      revoke();
+      for (const path of readPaths) {
+        const handlers = pathToHandlers.get(path);
+        if (handlers) {
+          handlers.delete(handler);
+          if (handlers.size === 0) {
+            pathToHandlers.delete(path);
           }
         }
-        readPaths.clear();
-      };
-      return { state: proxy, detach };
-    },
-    onChange(listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    }
+      }
+      readPaths.clear();
+    };
+    return { state: proxy, detach };
+  };
+  const onChange = (listener) => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  };
+  const watch = (selector, listener) => {
+    let prevValue;
+    const { detach, state: attachedState } = attach(() => {
+      const newValue = selector(attachedState);
+      if (newValue !== prevValue) {
+        listener(newValue, prevValue);
+        prevValue = newValue;
+      }
+    });
+    prevValue = selector(attachedState);
+    return detach;
+  };
+  return {
+    state,
+    attach,
+    onChange,
+    watch
   };
 };
 
