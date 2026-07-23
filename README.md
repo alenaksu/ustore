@@ -204,4 +204,4 @@ npx tsc --noEmit
 
 ## 📄 License
 
-MIT © Alena Ksu
+MIT © alenaksu
