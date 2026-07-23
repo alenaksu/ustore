@@ -100,6 +100,36 @@ const detach = store.onChange((event) => {
 detach();
 ```
 
+### 5. Watching Specific Properties or Derived State (`watch`)
+
+You can watch a specific property or a derived computed value from the store using `store.watch`.
+
+The selector function automatically tracks dependencies and triggers the listener callback *only* when the selected value changes. The listener receives both the new value and the previous value.
+
+```typescript
+import { store } from './store';
+
+// Watch a nested property
+const unwatchName = store.watch(
+  (state) => state.user.name,
+  (name, prevName) => {
+    console.log(`User name changed from ${prevName} to ${name}`);
+  }
+);
+
+// Watch a derived/computed value
+const unwatchIsDark = store.watch(
+  (state) => state.user.theme === 'dark',
+  (isDark, prevIsDark) => {
+    console.log(`Is dark theme active changed from ${prevIsDark} to ${isDark}`);
+  }
+);
+
+// To stop watching:
+unwatchName();
+unwatchIsDark();
+```
+
 ---
 
 ## ⚠️ Constraints & Caveats
