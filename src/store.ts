@@ -74,7 +74,7 @@ export interface Store<S extends Record<string, any> = {}> {
  * @returns A new Store instance.
  */
 export const createStore = <S extends Record<string, any>>(stateInitializer: () => S): Store<S> => {
-  let rawState!: S;
+  const rawState = {} as S;
 
   /**
    * Reverse-mapping for fast and correct update lookup
@@ -87,28 +87,47 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
   let isUpdatePending = false;
 
   const reset = () => {
-    rawState = Object.seal(structuredClone(stateInitializer()));
+    // Clear existing keys from rawState
+    for (const key of Object.keys(rawState)) {
+      delete (rawState as any)[key];
+    }
+    // Re-assign initial state properties in-place
+    Object.assign(rawState, structuredClone(stateInitializer()));
+
+    flush(true);
   };
 
-  const flush = () => {
+  const flush = (all = false) => {
     isUpdatePending = false;
+
     const changed = Array.from(pendingPropertyUpdates);
+    const handlersToNotify = new Set<UpdateHandler>();
+
     pendingPropertyUpdates.clear();
 
-    const handlersToNotify = new Set<UpdateHandler>();
-    for (const pendingPath of changed) {
-      const handlers = pathToHandlers.get(pendingPath) ?? [];
-      for (const handler of handlers) {
-        handlersToNotify.add(handler);
+    if (all) {
+      for (const handlers of pathToHandlers.values()) {
+        for (const handler of handlers) {
+          handlersToNotify.add(handler);
+        }
       }
 
-      // Clear the handlers for this path after notifying them, so that they can be re-registered if they read the property again during their update.
-      pathToHandlers.delete(pendingPath);
+      pathToHandlers.clear();
+    } else {
+      for (const pendingPath of changed) {
+        const handlers = pathToHandlers.get(pendingPath) ?? [];
+        for (const handler of handlers) {
+          handlersToNotify.add(handler);
+        }
+
+        // Clear the handlers for this path after notifying them, so that they can be re-registered if they read the property again during their update.
+        pathToHandlers.delete(pendingPath);
+      }
     }
 
-    if (listeners.size && changed.length) {
+    if (all || changed.length) {
       const event: ChangeEvent = {
-        paths: changed,
+        paths: all ? Object.keys(rawState) : changed,
       };
 
       for (const listener of listeners) {
@@ -130,7 +149,10 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
     queueMicrotask(flush);
   };
 
-  const state = createProxy(rawState, {
+  // Initialize the store state to its initial value
+  reset();
+
+  const rootStateProxy = createProxy(rawState, {
     onWrite,
   });
 
@@ -199,11 +221,8 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
     return detach;
   };
 
-  // Initialize the store state to its initial value
-  reset();
-
   return {
-    state,
+    state: rootStateProxy,
     reset,
     attach,
     subscribe,

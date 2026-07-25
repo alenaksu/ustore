@@ -27,29 +27,42 @@ var createRevocableProxy = (state, options = {}, path = '') =>
 
 // src/store.ts
 var createStore = (stateInitializer) => {
-  let rawState;
+  const rawState = {};
   const pathToHandlers = /* @__PURE__ */ new Map();
   const listeners = /* @__PURE__ */ new Set();
   const pendingPropertyUpdates = /* @__PURE__ */ new Set();
   let isUpdatePending = false;
   const reset = () => {
-    rawState = Object.seal(structuredClone(stateInitializer()));
+    for (const key of Object.keys(rawState)) {
+      delete rawState[key];
+    }
+    Object.assign(rawState, structuredClone(stateInitializer()));
+    flush(true);
   };
-  const flush = () => {
+  const flush = (all = false) => {
     isUpdatePending = false;
     const changed = Array.from(pendingPropertyUpdates);
-    pendingPropertyUpdates.clear();
     const handlersToNotify = /* @__PURE__ */ new Set();
-    for (const pendingPath of changed) {
-      const handlers = pathToHandlers.get(pendingPath) ?? [];
-      for (const handler of handlers) {
-        handlersToNotify.add(handler);
+    pendingPropertyUpdates.clear();
+    if (all) {
+      for (const handlers of pathToHandlers.values()) {
+        for (const handler of handlers) {
+          handlersToNotify.add(handler);
+        }
       }
-      pathToHandlers.delete(pendingPath);
+      pathToHandlers.clear();
+    } else {
+      for (const pendingPath of changed) {
+        const handlers = pathToHandlers.get(pendingPath) ?? [];
+        for (const handler of handlers) {
+          handlersToNotify.add(handler);
+        }
+        pathToHandlers.delete(pendingPath);
+      }
     }
-    if (listeners.size && changed.length) {
+    if (all || changed.length) {
       const event = {
-        paths: changed,
+        paths: all ? Object.keys(rawState) : changed,
       };
       for (const listener of listeners) {
         listener(event);
@@ -65,7 +78,8 @@ var createStore = (stateInitializer) => {
     isUpdatePending = true;
     queueMicrotask(flush);
   };
-  const state = createProxy(rawState, {
+  reset();
+  const rootStateProxy = createProxy(rawState, {
     onWrite,
   });
   const attach = (handler) => {
@@ -117,9 +131,8 @@ var createStore = (stateInitializer) => {
     prevValue = selector(attachedState);
     return detach;
   };
-  reset();
   return {
-    state,
+    state: rootStateProxy,
     reset,
     attach,
     subscribe,
