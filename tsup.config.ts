@@ -1,15 +1,10 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: {
-    store: 'src/store.ts',
-    lit: 'src/lit.ts',
-    react: 'src/react.ts',
-  },
-  splitting: true,
+  entry: ['src/store.ts', 'src/lit.ts', 'src/react.ts'],
+  format: ['esm', 'cjs'],
+  dts: true,
   sourcemap: true,
   clean: true,
   treeshake: true,
-  outDir: 'dist',
-  dts: true,
 });
