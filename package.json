@@ -2,17 +2,26 @@
   "name": "ustore",
   "version": "0.0.1",
   "type": "module",
+  "module": "dist/store.js",
+  "main": "dist/store.cjs",
+  "types": "dist/store.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "import": "./dist/store.js",
+      "require": "./dist/store.cjs",
       "types": "./dist/store.d.ts"
     },
     "./lit": {
       "import": "./dist/lit.js",
+      "require": "./dist/lit.cjs",
       "types": "./dist/lit.d.ts"
     },
     "./react": {
       "import": "./dist/react.js",
+      "require": "./dist/react.cjs",
       "types": "./dist/react.d.ts"
     }
   },
