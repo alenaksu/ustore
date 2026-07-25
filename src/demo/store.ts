@@ -27,7 +27,7 @@ for (let i = 0; i < TOTAL_CELLS; i++) {
   cells.push({ value: 0, hue: 140 }); // Starts with cool emerald green/teal hue
 }
 
-export const demoStore = createStore<DemoState>({
+export const demoStore = createStore<DemoState>(() => ({
   time: Date.now(),
   count: 0,
   fps: 60,
@@ -38,4 +38,4 @@ export const demoStore = createStore<DemoState>({
   grid: {
     cells,
   },
-});
+}));

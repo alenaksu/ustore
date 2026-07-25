@@ -30,6 +30,8 @@ interface Store<S extends Record<string, any> = {}> {
    * will not trigger subscriptions; use `attach` to obtain a tracked proxy.
    */
   state: S;
+  /** Resets the store state to its initial value. */
+  reset: () => void;
   /**
    * Creates a tracked state proxy bound to a change handler.
    * Accessing properties on the returned `state` automatically registers them for updates.
@@ -44,7 +46,7 @@ interface Store<S extends Record<string, any> = {}> {
    * @param listener - Callback invoked with changed paths.
    * @returns A function to unregister the listener.
    */
-  onChange(listener: ChangeListener): () => void;
+  subscribe(listener: ChangeListener): () => void;
   /**
    * Registers a listener to be notified when the value of a specific property or derived value changes.
    *
@@ -57,9 +59,9 @@ interface Store<S extends Record<string, any> = {}> {
 /**
  * Creates a reactive store with a deep-reactive state container.
  *
- * @param initialState - The initial state object.
+ * @param stateInitializer - A function that returns the initial state object.
  * @returns A new Store instance.
  */
-declare const createStore: <S extends Record<string, any>>(initialState: S) => Store<S>;
+declare const createStore: <S extends Record<string, any>>(stateInitializer: () => S) => Store<S>;
 
 export { type Attachment, type ChangeEvent, type ChangeListener, type Store, createStore };

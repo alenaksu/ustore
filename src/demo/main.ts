@@ -118,7 +118,7 @@ let mutationCountInInterval = 0;
 let totalMutations = 0;
 let lastMpsMeasure = performance.now();
 
-demoStore.onChange((event) => {
+demoStore.subscribe((event) => {
   const count = event.paths.length;
   mutationCountInInterval += count;
   totalMutations += count;

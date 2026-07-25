@@ -26,12 +26,15 @@ var createRevocableProxy = (state, options = {}, path = '') =>
   Proxy.revocable(state, createProxyHandler(options, path));
 
 // src/store.ts
-var createStore = (initialState) => {
-  const rawState = Object.seal(structuredClone(initialState));
+var createStore = (stateInitializer) => {
+  let rawState;
   const pathToHandlers = /* @__PURE__ */ new Map();
   const listeners = /* @__PURE__ */ new Set();
   const pendingPropertyUpdates = /* @__PURE__ */ new Set();
   let isUpdatePending = false;
+  const reset = () => {
+    rawState = Object.seal(structuredClone(stateInitializer()));
+  };
   const flush = () => {
     isUpdatePending = false;
     const changed = Array.from(pendingPropertyUpdates);
@@ -96,7 +99,7 @@ var createStore = (initialState) => {
     };
     return { state: proxy, detach };
   };
-  const onChange = (listener) => {
+  const subscribe = (listener) => {
     listeners.add(listener);
     return () => {
       listeners.delete(listener);
@@ -114,10 +117,12 @@ var createStore = (initialState) => {
     prevValue = selector(attachedState);
     return detach;
   };
+  reset();
   return {
     state,
+    reset,
     attach,
-    onChange,
+    subscribe,
     watch,
   };
 };

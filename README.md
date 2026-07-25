@@ -26,14 +26,22 @@ export interface AppState {
   user: UserState;
 }
 
-export const store = createStore<AppState>({
+export const store = createStore<AppState>(() => ({
   count: 0,
   time: Date.now(),
   user: {
     name: 'Alice',
     theme: 'dark',
   },
-});
+}));
+```
+
+### 1.1 Resetting State (`reset`)
+
+You can reset the store state back to its initial value using `store.reset()`:
+
+```typescript
+store.reset();
 ```
 
 ### 2. React Integration
@@ -92,19 +100,19 @@ You can register listeners to audit mutations globally or listen to general upda
 import { store } from './store';
 
 // Listen to all state changes across the entire store
-const detach = store.onChange((event) => {
+const unsubscribe = store.subscribe((event) => {
   console.log('Mutated paths:', event.paths); // e.g. ["user.theme", "count"]
 });
 
 // To stop listening:
-detach();
+unsubscribe();
 ```
 
 ### 5. Watching Specific Properties or Derived State (`watch`)
 
 You can watch a specific property or a derived computed value from the store using `store.watch`.
 
-The selector function automatically tracks dependencies and triggers the listener callback *only* when the selected value changes. The listener receives both the new value and the previous value.
+The selector function automatically tracks dependencies and triggers the listener callback _only_ when the selected value changes. The listener receives both the new value and the previous value.
 
 ```typescript
 import { store } from './store';
@@ -114,7 +122,7 @@ const unwatchName = store.watch(
   (state) => state.user.name,
   (name, prevName) => {
     console.log(`User name changed from ${prevName} to ${name}`);
-  }
+  },
 );
 
 // Watch a derived/computed value
@@ -122,7 +130,7 @@ const unwatchIsDark = store.watch(
   (state) => state.user.theme === 'dark',
   (isDark, prevIsDark) => {
     console.log(`Is dark theme active changed from ${prevIsDark} to ${isDark}`);
-  }
+  },
 );
 
 // To stop watching:
