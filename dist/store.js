@@ -9,11 +9,17 @@ var createProxyHandler = (options, path = '') => {
   return {
     get(target, propertyName, receiver) {
       const value = Reflect.get(target, propertyName, receiver);
+      if (typeof propertyName === 'symbol') {
+        return value;
+      }
       const propertyPath = path ? `${path}.${propertyName}` : propertyName;
       options.onRead?.(propertyPath);
       return isProxyable(value) ? createProxy(value, options, propertyPath) : value;
     },
     set(target, propertyName, newValue, receiver) {
+      if (typeof propertyName === 'symbol') {
+        return Reflect.set(target, propertyName, newValue, receiver);
+      }
       const propertyPath = path ? `${path}.${propertyName}` : propertyName;
       options.onWrite?.(propertyPath);
       return Reflect.set(target, propertyName, newValue, receiver);
