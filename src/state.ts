@@ -34,15 +34,24 @@ export const createProxyHandler = <S extends object>(
   path: string = '',
 ): ProxyHandler<S> => {
   return {
-    get<P extends keyof S>(target: S, propertyName: string, receiver: unknown): S[P] {
+    get<P extends keyof S>(target: S, propertyName: string | symbol, receiver: unknown): S[P] {
       const value = Reflect.get(target, propertyName, receiver) as S[P];
+
+      if (typeof propertyName === 'symbol') {
+        return value;
+      }
+
       const propertyPath = path ? `${path}.${propertyName}` : propertyName;
 
       options.onRead?.(propertyPath);
 
       return isProxyable(value) ? createProxy<typeof value>(value, options, propertyPath) : value;
     },
-    set(target, propertyName: string, newValue, receiver) {
+    set(target, propertyName: string | symbol, newValue, receiver) {
+      if (typeof propertyName === 'symbol') {
+        return Reflect.set(target, propertyName, newValue, receiver);
+      }
+
       const propertyPath = path ? `${path}.${propertyName}` : propertyName;
 
       options.onWrite?.(propertyPath);
