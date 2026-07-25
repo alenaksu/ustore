@@ -79,7 +79,7 @@ var createStore = (stateInitializer) => {
     queueMicrotask(flush);
   };
   reset();
-  const rootStateProxy = createProxy(rawState, {
+  const state = createProxy(rawState, {
     onWrite,
   });
   const attach = (handler) => {
@@ -132,7 +132,7 @@ var createStore = (stateInitializer) => {
     return detach;
   };
   return {
-    state: rootStateProxy,
+    state,
     reset,
     attach,
     subscribe,
