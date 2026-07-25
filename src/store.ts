@@ -152,7 +152,7 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
   // Initialize the store state to its initial value
   reset();
 
-  const rootStateProxy = createProxy(rawState, {
+  const state = createProxy(rawState, {
     onWrite,
   });
 
@@ -222,7 +222,7 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
   };
 
   return {
-    state: rootStateProxy,
+    state,
     reset,
     attach,
     subscribe,
