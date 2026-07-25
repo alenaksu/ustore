@@ -2,12 +2,12 @@
 
 // src/state.ts
 var isProxyable = (value) => {
-  if (value === null || typeof value !== "object") return false;
+  if (value === null || typeof value !== 'object') return false;
   if (Array.isArray(value)) return true;
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 };
-var createProxyHandler = (options, path = "") => {
+var createProxyHandler = (options, path = '') => {
   return {
     get(target, propertyName, receiver) {
       const value = Reflect.get(target, propertyName, receiver);
@@ -19,19 +19,24 @@ var createProxyHandler = (options, path = "") => {
       const propertyPath = path ? `${path}.${propertyName}` : propertyName;
       options.onWrite?.(propertyPath);
       return Reflect.set(target, propertyName, newValue, receiver);
-    }
+    },
   };
 };
-var createProxy = (state, options = {}, path = "") => new Proxy(state, createProxyHandler(options, path));
-var createRevocableProxy = (state, options = {}, path = "") => Proxy.revocable(state, createProxyHandler(options, path));
+var createProxy = (state, options = {}, path = '') =>
+  new Proxy(state, createProxyHandler(options, path));
+var createRevocableProxy = (state, options = {}, path = '') =>
+  Proxy.revocable(state, createProxyHandler(options, path));
 
 // src/store.ts
-var createStore = (initialState) => {
-  const rawState = Object.seal(structuredClone(initialState));
+var createStore = (stateInitializer) => {
+  let rawState;
   const pathToHandlers = /* @__PURE__ */ new Map();
   const listeners = /* @__PURE__ */ new Set();
   const pendingPropertyUpdates = /* @__PURE__ */ new Set();
   let isUpdatePending = false;
+  const reset = () => {
+    rawState = Object.seal(structuredClone(stateInitializer()));
+  };
   const flush = () => {
     isUpdatePending = false;
     const changed = Array.from(pendingPropertyUpdates);
@@ -46,7 +51,7 @@ var createStore = (initialState) => {
     }
     if (listeners.size && changed.length) {
       const event = {
-        paths: changed
+        paths: changed,
       };
       for (const listener of listeners) {
         listener(event);
@@ -63,7 +68,7 @@ var createStore = (initialState) => {
     queueMicrotask(flush);
   };
   const state = createProxy(rawState, {
-    onWrite
+    onWrite,
   });
   const attach = (handler) => {
     const readPaths = /* @__PURE__ */ new Set();
@@ -76,7 +81,7 @@ var createStore = (initialState) => {
     };
     const { proxy, revoke } = createRevocableProxy(rawState, {
       onRead,
-      onWrite
+      onWrite,
     });
     let detached = false;
     const detach = () => {
@@ -96,7 +101,7 @@ var createStore = (initialState) => {
     };
     return { state: proxy, detach };
   };
-  const onChange = (listener) => {
+  const subscribe = (listener) => {
     listeners.add(listener);
     return () => {
       listeners.delete(listener);
@@ -114,11 +119,13 @@ var createStore = (initialState) => {
     prevValue = selector(attachedState);
     return detach;
   };
+  reset();
   return {
     state,
+    reset,
     attach,
-    onChange,
-    watch
+    subscribe,
+    watch,
   };
 };
 

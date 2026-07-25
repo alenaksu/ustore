@@ -37,6 +37,9 @@ export interface Store<S extends Record<string, any> = {}> {
    */
   state: S;
 
+  /** Resets the store state to its initial value. */
+  reset: () => void;
+
   /**
    * Creates a tracked state proxy bound to a change handler.
    * Accessing properties on the returned `state` automatically registers them for updates.
@@ -52,7 +55,7 @@ export interface Store<S extends Record<string, any> = {}> {
    * @param listener - Callback invoked with changed paths.
    * @returns A function to unregister the listener.
    */
-  onChange(listener: ChangeListener): () => void;
+  subscribe(listener: ChangeListener): () => void;
 
   /**
    * Registers a listener to be notified when the value of a specific property or derived value changes.
@@ -67,11 +70,11 @@ export interface Store<S extends Record<string, any> = {}> {
 /**
  * Creates a reactive store with a deep-reactive state container.
  *
- * @param initialState - The initial state object.
+ * @param stateInitializer - A function that returns the initial state object.
  * @returns A new Store instance.
  */
-export const createStore = <S extends Record<string, any>>(initialState: S): Store<S> => {
-  const rawState = Object.seal(structuredClone(initialState));
+export const createStore = <S extends Record<string, any>>(stateInitializer: () => S): Store<S> => {
+  let rawState!: S;
 
   /**
    * Reverse-mapping for fast and correct update lookup
@@ -82,6 +85,10 @@ export const createStore = <S extends Record<string, any>>(initialState: S): Sto
 
   const pendingPropertyUpdates = new Set<string>();
   let isUpdatePending = false;
+
+  const reset = () => {
+    rawState = Object.seal(structuredClone(stateInitializer()));
+  };
 
   const flush = () => {
     isUpdatePending = false;
@@ -166,7 +173,7 @@ export const createStore = <S extends Record<string, any>>(initialState: S): Sto
     return { state: proxy, detach };
   };
 
-  const onChange = (listener: ChangeListener): (() => void) => {
+  const subscribe = (listener: ChangeListener): (() => void) => {
     listeners.add(listener);
     return () => {
       listeners.delete(listener);
@@ -192,10 +199,14 @@ export const createStore = <S extends Record<string, any>>(initialState: S): Sto
     return detach;
   };
 
+  // Initialize the store state to its initial value
+  reset();
+
   return {
     state,
+    reset,
     attach,
-    onChange,
+    subscribe,
     watch,
   };
 };
