@@ -54,6 +54,7 @@ var createStore = (stateInitializer) => {
       delete rawState[key];
     }
     deepSet(rawState, structuredClone(stateInitializer()));
+    flush(true);
   };
   const flush = (all = false) => {
     isUpdatePending = false;
@@ -148,7 +149,7 @@ var createStore = (stateInitializer) => {
     return detach;
   };
   const patch = (partialState) => {
-    deepSet(rawState, partialState);
+    deepSet(state, partialState);
   };
   return {
     state,
