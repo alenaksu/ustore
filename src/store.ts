@@ -104,10 +104,9 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
     for (const key of Object.keys(rawState)) {
       delete (rawState as any)[key];
     }
-    // Re-assign initial state properties in-place
-    Object.assign(rawState, structuredClone(stateInitializer()));
 
-    flush(true);
+    // Re-assign initial state properties in-place
+    deepSet(rawState, structuredClone(stateInitializer()));
   };
 
   const flush = (all = false) => {
