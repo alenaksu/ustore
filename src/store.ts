@@ -107,6 +107,9 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
 
     // Re-assign initial state properties in-place
     deepSet(rawState, structuredClone(stateInitializer()));
+
+    // Notify all listeners of the reset event
+    flush(true);
   };
 
   const flush = (all = false) => {
@@ -234,7 +237,7 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
   };
 
   const patch = (partialState: Partial<S>) => {
-    deepSet(rawState, partialState);
+    deepSet(state, partialState);
   };
 
   return {
