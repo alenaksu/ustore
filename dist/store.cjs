@@ -53,8 +53,7 @@ var createStore = (stateInitializer) => {
     for (const key of Object.keys(rawState)) {
       delete rawState[key];
     }
-    Object.assign(rawState, structuredClone(stateInitializer()));
-    flush(true);
+    deepSet(rawState, structuredClone(stateInitializer()));
   };
   const flush = (all = false) => {
     isUpdatePending = false;
