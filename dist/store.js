@@ -30,6 +30,15 @@ var createProxy = (state, options = {}, path = '') =>
   new Proxy(state, createProxyHandler(options, path));
 var createRevocableProxy = (state, options = {}, path = '') =>
   Proxy.revocable(state, createProxyHandler(options, path));
+var deepSet = (state, newState) => {
+  for (const key of Object.keys(newState)) {
+    if (isProxyable(newState[key]) && isProxyable(state[key])) {
+      deepSet(state[key], newState[key]);
+    } else {
+      state[key] = newState[key];
+    }
+  }
+};
 
 // src/store.ts
 var createStore = (stateInitializer) => {
@@ -117,7 +126,7 @@ var createStore = (stateInitializer) => {
       }
       readPaths.clear();
     };
-    return { state: proxy, detach };
+    return { state: proxy, patch, detach };
   };
   const subscribe = (listener) => {
     listeners.add(listener);
@@ -137,8 +146,12 @@ var createStore = (stateInitializer) => {
     prevValue = selector(attachedState);
     return detach;
   };
+  const patch = (partialState) => {
+    deepSet(rawState, partialState);
+  };
   return {
     state,
+    patch,
     reset,
     attach,
     subscribe,

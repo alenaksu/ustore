@@ -78,3 +78,19 @@ export const createRevocableProxy = <S extends object>(
   options: StateProxyOptions = {},
   path = '',
 ) => Proxy.revocable(state, createProxyHandler(options, path));
+
+/**
+ * Deeply sets the properties of a state object to match those of a new state object.
+ * This function mutates the original state object and does not replace it entirely, preserving any existing references to the state.
+ * @param state
+ * @param newState
+ */
+export const deepSet = <T extends Record<string, any>>(state: T, newState: T): void => {
+  for (const key of Object.keys(newState) as (keyof T)[]) {
+    if (isProxyable(newState[key]) && isProxyable(state[key])) {
+      deepSet(state[key], newState[key]);
+    } else {
+      state[key] = newState[key];
+    }
+  }
+};

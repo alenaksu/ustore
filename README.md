@@ -44,6 +44,29 @@ You can reset the store state back to its initial value using `store.reset()`:
 store.reset();
 ```
 
+### 1.2 Patching State (`patch`)
+
+You can deeply update multiple properties or complex nested branches of state using `store.patch()`.
+
+Unlike replacing the state object, `patch` applies a deep in-place update using partial objects, preserving proxy references and triggering precise path updates.
+
+```typescript
+// Update nested or multiple state properties at once
+store.patch({
+  user: {
+    theme: 'light',
+  },
+});
+```
+
+You can also access `patch` directly from an attachment created with `store.attach()`:
+
+```typescript
+const { state, patch, detach } = store.attach(updateUI);
+
+patch({ count: 10 });
+```
+
 ### 2. React Integration
 
 Import `useStore` to consume the store in React. Property reads are automatically tracked during the component's render execution.
@@ -144,19 +167,19 @@ unwatchIsDark();
 
 To ensure correct path tracking and updates, uStore operates under a specific mental model:
 
-### 1. The Exact Mutation Invariant
+### 1. Property Mutations & Branch Updates (`patch`)
 
-uStore assumes that the state's shape is static and properties are mutated directly.
+uStore tracks mutations at the property level and supports both direct mutations and deep updates.
 
-- **Do:** Mutate properties directly.
+- **Direct Property Mutation:** Mutate properties directly when updating individual values.
   ```typescript
   store.state.user.name = 'Bob'; // Correct. Triggers 'user.name' listeners.
   ```
-- **Avoid:** Overwriting intermediate parent nodes or entire branches.
+- **Partial & Complex Updates (`patch`):** Use `store.patch()` or `attachment.patch()` when updating multiple properties or nested branches at once without needing to re-specify existing properties.
   ```typescript
-  store.state.user = { name: 'Bob', theme: 'light' }; // Avoid.
+  store.patch({ user: { theme: 'light' } }); // Convenient: merges theme without overwriting user.name
   ```
-  _Why?_ Subscriptions are registered against exact paths (e.g. `user.name`). Overwriting the `user` parent node bypasses exact matching on `user.name`, causing nested subscribers to miss the update.
+- **Direct Parent Node Assignment:** Assigning a new object to a parent property (e.g. `store.state.user = { name: 'Bob', theme: 'light' }`) is fully reactive and triggers all nested subscribers correctly, as property reads automatically register interest in parent paths. Use `patch()` whenever you want to merge partial changes into nested objects instead of replacing them.
 
 ### 2. No Wildcard/Hierarchical Subscriptions
 
