@@ -1,4 +1,4 @@
-import { createProxy, createRevocableProxy } from './state';
+import { createProxy, createRevocableProxy, deepSet } from './state';
 
 interface UpdateHandler {
   (): void;
@@ -23,6 +23,12 @@ export type ChangeListener = (event: ChangeEvent) => void;
 export interface Attachment<S> {
   /** The tracked state proxy for a specific consumer. */
   state: S;
+  /**
+   * Deeply patches the store state with partial changes, updating properties in-place.
+   *
+   * @param partialState - A partial representation of the state structure containing properties to update.
+   */
+  patch: (partialState: Partial<S>) => void;
   /** Unsubscribes the tracked state proxy, stopping further updates to its handler. */
   detach: () => void;
 }
@@ -41,11 +47,18 @@ export interface Store<S extends Record<string, any> = {}> {
   reset: () => void;
 
   /**
+   * Deeply patches the store state with partial changes, updating properties in-place.
+   *
+   * @param partialState - A partial representation of the state structure containing properties to update.
+   */
+  patch: (partialState: Partial<S>) => void;
+
+  /**
    * Creates a tracked state proxy bound to a change handler.
    * Accessing properties on the returned `state` automatically registers them for updates.
    *
    * @param handler - The callback function to run when tracked properties change.
-   * @returns An attachment holding the tracked state proxy and its detach function.
+   * @returns An attachment holding the tracked state proxy, patch function, and detach function.
    */
   attach(handler: UpdateHandler): Attachment<S>;
 
@@ -192,7 +205,7 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
       readPaths.clear();
     };
 
-    return { state: proxy, detach };
+    return { state: proxy, patch, detach };
   };
 
   const subscribe = (listener: ChangeListener): (() => void) => {
@@ -221,8 +234,13 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
     return detach;
   };
 
+  const patch = (partialState: Partial<S>) => {
+    deepSet(rawState, partialState);
+  };
+
   return {
     state,
+    patch,
     reset,
     attach,
     subscribe,
