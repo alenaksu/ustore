@@ -53,7 +53,7 @@ export interface Store<S extends Record<string, any> = {}> {
    *
    * @param partialState - A partial representation of the state structure containing properties to update.
    */
-  patch: (partialState: Partial<S>) => void;
+  patch: (partialState: DeepPartial<S>) => void;
 
   /**
    * Creates a tracked state proxy bound to a change handler.

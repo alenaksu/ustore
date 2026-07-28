@@ -1,4 +1,4 @@
-import { S as Store } from './types-1oBNZSDw.cjs';
+import { S as Store } from './types-BCPGyvml.cjs';
 
 /**
  * A React hook to consume and track the state of a Store.
