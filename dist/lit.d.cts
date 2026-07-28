@@ -1,5 +1,5 @@
 import { ReactiveElement } from 'lit';
-import { Store } from './store.cjs';
+import { S as Store } from './types-1oBNZSDw.cjs';
 
 /**
  * A property decorator for Lit elements that binds a property to a Store's state.
@@ -10,6 +10,8 @@ import { Store } from './store.cjs';
  *
  * @param store - The Store instance to track.
  */
-declare const consumeStore: <S extends Record<string, any>>(store: Store<S>) => <C extends ReactiveElement>(target: C, propertyKey: PropertyKey) => void;
+declare const consumeStore: <S extends Record<string, any>>(
+  store: Store<S>,
+) => <C extends ReactiveElement>(target: C, propertyKey: PropertyKey) => void;
 
 export { consumeStore };
