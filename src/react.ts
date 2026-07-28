@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Store } from './store';
+import { Store } from './types';
 
 /**
  * A React hook to consume and track the state of a Store.

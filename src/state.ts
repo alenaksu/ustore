@@ -1,3 +1,5 @@
+import { StateProxyOptions } from './types';
+
 /**
  * Determines whether a value can be wrapped in a reactive proxy. Only plain objects
  * and arrays are proxyable. Custom objects, dates, maps, sets, and primitives are treated as atomic.
@@ -12,15 +14,6 @@ const isProxyable = (value: unknown): value is object => {
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 };
-
-interface PropertyAccessHandler {
-  (propertyPath: string): void;
-}
-
-interface StateProxyOptions {
-  onRead?: PropertyAccessHandler;
-  onWrite?: PropertyAccessHandler;
-}
 
 /**
  * Creates a ProxyHandler configured with read/write hooks.
