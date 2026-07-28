@@ -1,5 +1,5 @@
 import { ReactiveElement } from 'lit';
-import { Store } from './store';
+import { Store } from './types';
 
 /**
  * A property decorator for Lit elements that binds a property to a Store's state.
