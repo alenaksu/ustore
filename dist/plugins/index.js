@@ -24,27 +24,22 @@ var withHistory = (store, options = {}) => {
   const unsubscribe = store.subscribe(() => {
     record();
   });
+  const restoreState = (targetIndex) => {
+    index = targetIndex;
+    isRestoring = true;
+    store.patch(stack[index]);
+    queueMicrotask(() => {
+      isRestoring = false;
+    });
+    return true;
+  };
   const undo = () => {
     if (index <= 0) return false;
-    index--;
-    isRestoring = true;
-    try {
-      store.patch(stack[index]);
-    } finally {
-      isRestoring = false;
-    }
-    return true;
+    return restoreState(index - 1);
   };
   const redo = () => {
     if (index >= stack.length - 1) return false;
-    index++;
-    isRestoring = true;
-    try {
-      store.patch(stack[index]);
-    } finally {
-      isRestoring = false;
-    }
-    return true;
+    return restoreState(index + 1);
   };
   const historyManager = {
     undo,
