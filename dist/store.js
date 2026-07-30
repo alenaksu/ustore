@@ -75,7 +75,7 @@ var createStore = (stateInitializer) => {
         pathToHandlers.delete(pendingPath);
       }
     }
-    if (all || changed.length) {
+    if (changed.length) {
       const event = {
         paths: all ? Object.keys(rawState) : changed,
       };
