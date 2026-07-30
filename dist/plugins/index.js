@@ -5,6 +5,12 @@ var withHistory = (store, options = {}) => {
   let isRestoring = false;
   let stack = [store.snapshot()];
   let index = 0;
+  const historyListeners = /* @__PURE__ */ new Set();
+  const notifyHistoryListeners = () => {
+    for (const listener of historyListeners) {
+      listener();
+    }
+  };
   const record = () => {
     if (isPaused || isRestoring) return;
     if (options.shouldRecord === false) return;
@@ -20,6 +26,7 @@ var withHistory = (store, options = {}) => {
     } else {
       index++;
     }
+    notifyHistoryListeners();
   };
   const unsubscribe = store.subscribe(() => {
     record();
@@ -28,6 +35,7 @@ var withHistory = (store, options = {}) => {
     index = targetIndex;
     isRestoring = true;
     store.patch(stack[index]);
+    notifyHistoryListeners();
     queueMicrotask(() => {
       isRestoring = false;
     });
@@ -45,9 +53,16 @@ var withHistory = (store, options = {}) => {
     undo,
     redo,
     record,
+    subscribe: (listener) => {
+      historyListeners.add(listener);
+      return () => {
+        historyListeners.delete(listener);
+      };
+    },
     clear: () => {
       stack = [store.snapshot()];
       index = 0;
+      notifyHistoryListeners();
     },
     pause: () => {
       isPaused = true;
@@ -69,6 +84,7 @@ var withHistory = (store, options = {}) => {
     },
     destroy: () => {
       unsubscribe();
+      historyListeners.clear();
     },
   };
   return Object.assign(store, { history: historyManager });

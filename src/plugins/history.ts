@@ -18,6 +18,14 @@ export const withHistory = <S extends Record<string, any>>(
   let stack: S[] = [store.snapshot()];
   let index = 0;
 
+  const historyListeners = new Set<() => void>();
+
+  const notifyHistoryListeners = () => {
+    for (const listener of historyListeners) {
+      listener();
+    }
+  };
+
   const record = () => {
     if (isPaused || isRestoring) return;
 
@@ -37,6 +45,8 @@ export const withHistory = <S extends Record<string, any>>(
     } else {
       index++;
     }
+
+    notifyHistoryListeners();
   };
 
   const unsubscribe = store.subscribe(() => {
@@ -47,6 +57,9 @@ export const withHistory = <S extends Record<string, any>>(
     index = targetIndex;
     isRestoring = true;
     store.patch(stack[index]);
+
+    notifyHistoryListeners();
+
     queueMicrotask(() => {
       isRestoring = false;
     });
@@ -67,9 +80,16 @@ export const withHistory = <S extends Record<string, any>>(
     undo,
     redo,
     record,
+    subscribe: (listener: () => void) => {
+      historyListeners.add(listener);
+      return () => {
+        historyListeners.delete(listener);
+      };
+    },
     clear: () => {
       stack = [store.snapshot()];
       index = 0;
+      notifyHistoryListeners();
     },
     pause: () => {
       isPaused = true;
@@ -91,6 +111,7 @@ export const withHistory = <S extends Record<string, any>>(
     },
     destroy: () => {
       unsubscribe();
+      historyListeners.clear();
     },
   };
 

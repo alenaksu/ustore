@@ -138,6 +138,38 @@ test('withHistory pause, resume, clear, destroy', async () => {
   store.history.destroy();
 });
 
+test('withHistory history.subscribe listener notifications', async () => {
+  const store = withHistory(createStore(() => ({ value: 0 })));
+
+  let historyUpdatesCount = 0;
+  const unsubscribeHistory = store.history.subscribe(() => {
+    historyUpdatesCount++;
+  });
+
+  // 1. Mutation triggers record -> history listener called
+  store.state.value = 1;
+  await new Promise((resolve) => queueMicrotask(resolve));
+  assert.strictEqual(historyUpdatesCount, 1);
+
+  // 2. Undo triggers restoreState -> history listener called
+  store.history.undo();
+  assert.strictEqual(historyUpdatesCount, 2);
+
+  // 3. Redo triggers restoreState -> history listener called
+  store.history.redo();
+  assert.strictEqual(historyUpdatesCount, 3);
+
+  // 4. Clear triggers history listener
+  store.history.clear();
+  assert.strictEqual(historyUpdatesCount, 4);
+
+  // 5. Unsubscribe stops notifications
+  unsubscribeHistory();
+  store.state.value = 2;
+  await new Promise((resolve) => queueMicrotask(resolve));
+  assert.strictEqual(historyUpdatesCount, 4);
+});
+
 test('store.snapshot returns an independent deep clone', () => {
   const store = createStore(() => ({
     user: { name: 'Alice', age: 30 },

@@ -206,6 +206,12 @@ if (store.history.canUndo) {
 if (store.history.canRedo) {
   store.history.redo(); // Re-applies state to count: 2
 }
+
+// Subscribe exclusively to history updates (undo/redo availability, stack changes)
+const unsubscribeHistory = store.history.subscribe(() => {
+  undoButton.disabled = !store.history.canUndo;
+  redoButton.disabled = !store.history.canRedo;
+});
 ```
 
 #### Conditional Recording (`shouldRecord`)
