@@ -43,28 +43,24 @@ export const withHistory = <S extends Record<string, any>>(
     record();
   });
 
+  const restoreState = (targetIndex: number) => {
+    index = targetIndex;
+    isRestoring = true;
+    store.patch(stack[index]);
+    queueMicrotask(() => {
+      isRestoring = false;
+    });
+    return true;
+  };
+
   const undo = (): boolean => {
     if (index <= 0) return false;
-    index--;
-    isRestoring = true;
-    try {
-      store.patch(stack[index]);
-    } finally {
-      isRestoring = false;
-    }
-    return true;
+    return restoreState(index - 1);
   };
 
   const redo = (): boolean => {
     if (index >= stack.length - 1) return false;
-    index++;
-    isRestoring = true;
-    try {
-      store.patch(stack[index]);
-    } finally {
-      isRestoring = false;
-    }
-    return true;
+    return restoreState(index + 1);
   };
 
   const historyManager: HistoryManager<S> = {
