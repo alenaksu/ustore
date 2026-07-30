@@ -168,10 +168,13 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
     deepSet(state, partialState);
   };
 
+  const snapshot = (): S => structuredClone(rawState);
+
   return {
     state,
     patch,
     reset,
+    snapshot,
     attach,
     subscribe,
     watch,

@@ -48,6 +48,10 @@ interface Store<S extends Record<string, any> = {}> {
    */
   patch: (partialState: DeepPartial<S>) => void;
   /**
+   * Returns a deep clone snapshot of the current state.
+   */
+  snapshot: () => S;
+  /**
    * Creates a tracked state proxy bound to a change handler.
    * Accessing properties on the returned `state` automatically registers them for updates.
    *

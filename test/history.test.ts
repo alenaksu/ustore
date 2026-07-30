@@ -137,3 +137,24 @@ test('withHistory pause, resume, clear, destroy', async () => {
 
   store.history.destroy();
 });
+
+test('store.snapshot returns an independent deep clone', () => {
+  const store = createStore(() => ({
+    user: { name: 'Alice', age: 30 },
+    items: [1, 2, 3],
+  }));
+
+  const snap = store.snapshot();
+  assert.deepStrictEqual(snap, {
+    user: { name: 'Alice', age: 30 },
+    items: [1, 2, 3],
+  });
+
+  // Mutating snap does not mutate store state
+  snap.user.name = 'Bob';
+  assert.strictEqual(store.state.user.name, 'Alice');
+
+  // Mutating store state does not mutate previous snap
+  store.state.user.name = 'Charlie';
+  assert.strictEqual(snap.user.name, 'Bob');
+});
