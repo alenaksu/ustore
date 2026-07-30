@@ -62,9 +62,11 @@ var withHistory = (store, options = {}) => {
       };
     },
     clear: () => {
-      stack = [store.snapshot()];
-      index = 0;
-      notifyHistoryListeners();
+      queueMicrotask(() => {
+        stack = [store.snapshot()];
+        index = 0;
+        notifyHistoryListeners();
+      });
     },
     pause: () => {
       isPaused = true;
