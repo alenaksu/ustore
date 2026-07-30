@@ -13,7 +13,7 @@ By leveraging ES6 Proxies, uStore tracks property read-paths at render time and 
 Define your initial state and instantiate the store. uStore works with any plain JavaScript object.
 
 ```typescript
-import { createStore } from '@alenaksu/ustore';
+import { createStore } from 'ustore';
 
 export interface UserState {
   name: string;
@@ -72,7 +72,7 @@ patch({ count: 10 });
 Import `useStore` to consume the store in React. Property reads are automatically tracked during the component's render execution.
 
 ```tsx
-import { useStore } from '@alenaksu/ustore/react';
+import { useStore } from 'ustore/react';
 import { store } from './store';
 
 export const Counter = () => {
@@ -96,7 +96,7 @@ Use the `@consumeStore` decorator to bind a property to a uStore store in a cust
 ```typescript
 import { LitElement, html } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import { consumeStore } from '@alenaksu/ustore/lit';
+import { consumeStore } from 'ustore/lit';
 import { store } from './store';
 
 @customElement('my-counter')
@@ -159,6 +159,61 @@ const unwatchIsDark = store.watch(
 // To stop watching:
 unwatchName();
 unwatchIsDark();
+```
+
+---
+
+## 🔌 Plugins
+
+uStore includes optional plugins available via the `ustore/plugins` subpath export.
+
+### 1. State History & Undo / Redo (`withHistory`)
+
+You can enable state history management (Undo, Redo, and Snapshot tracking) by wrapping your store with `withHistory`.
+
+```typescript
+import { createStore } from 'ustore';
+import { withHistory } from 'ustore/plugins';
+
+export const store = withHistory(
+  createStore(() => ({
+    count: 0,
+    user: { name: 'Alice' },
+  })),
+  {
+    limit: 50, // Retain up to 50 history snapshots (default: 50)
+  },
+);
+
+// Mutating state records a snapshot automatically
+store.state.count++;
+store.state.count++;
+
+// Undo/Redo operations
+if (store.history.canUndo) {
+  store.history.undo(); // Reverts state to count: 1 and updates subscribers
+}
+
+if (store.history.canRedo) {
+  store.history.redo(); // Re-applies state to count: 2
+}
+```
+
+#### Conditional Recording (`shouldRecord`)
+
+You can filter which state changes create history snapshots by providing a predicate function or a boolean for `shouldRecord`:
+
+```typescript
+const store = withHistory(
+  createStore(() => ({
+    count: 0,
+    isDragging: false,
+  })),
+  {
+    // Ignore state snapshots during drag operations
+    shouldRecord: (state) => !state.isDragging,
+  },
+);
 ```
 
 ---

@@ -1,28 +1,24 @@
-export type DeepPartial<T> = {
+type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
-
-export interface UpdateHandler {
+interface UpdateHandler {
   (): void;
 }
-
 /**
  * Event payload emitted to registered change listeners when the store state changes.
  */
-export interface ChangeEvent {
+interface ChangeEvent {
   /** The paths of the properties that were mutated. */
   paths: string[];
 }
-
 /**
  * A callback function triggered when the store state is mutated.
  */
-export type ChangeListener = (event: ChangeEvent) => void;
-
+type ChangeListener = (event: ChangeEvent) => void;
 /**
  * An attachment containing the tracked state proxy and its detach function.
  */
-export interface Attachment<S> {
+interface Attachment<S> {
   /** The tracked state proxy for a specific consumer. */
   state: S;
   /**
@@ -34,27 +30,23 @@ export interface Attachment<S> {
   /** Unsubscribes the tracked state proxy, stopping further updates to its handler. */
   detach: () => void;
 }
-
 /**
  * A reactive state container.
  */
-export interface Store<S extends Record<string, any> = {}> {
+interface Store<S extends Record<string, any> = {}> {
   /**
    * The root state proxy. Reading from or writing to this proxy
    * will not trigger subscriptions; use `attach` to obtain a tracked proxy.
    */
   state: S;
-
   /** Resets the store state to its initial value. */
   reset: () => void;
-
   /**
    * Deeply patches the store state with partial changes, updating properties in-place.
    *
    * @param partialState - A partial representation of the state structure containing properties to update.
    */
   patch: (partialState: DeepPartial<S>) => void;
-
   /**
    * Creates a tracked state proxy bound to a change handler.
    * Accessing properties on the returned `state` automatically registers them for updates.
@@ -63,7 +55,6 @@ export interface Store<S extends Record<string, any> = {}> {
    * @returns An attachment holding the tracked state proxy, patch function, and detach function.
    */
   attach(handler: UpdateHandler): Attachment<S>;
-
   /**
    * Registers a listener to be notified of all state changes across the store.
    *
@@ -71,7 +62,6 @@ export interface Store<S extends Record<string, any> = {}> {
    * @returns A function to unregister the listener.
    */
   subscribe(listener: ChangeListener): () => void;
-
   /**
    * Registers a listener to be notified when the value of a specific property or derived value changes.
    *
@@ -81,20 +71,10 @@ export interface Store<S extends Record<string, any> = {}> {
    */
   watch<T>(selector: (state: S) => T, handler: (value: T, prevValue: T) => void): () => void;
 }
-
-export interface PropertyAccessHandler {
-  (propertyPath: string): void;
-}
-
-export interface StateProxyOptions {
-  onRead?: PropertyAccessHandler;
-  onWrite?: PropertyAccessHandler;
-}
-
 /**
  * Options for configuring state history tracking.
  */
-export interface HistoryOptions<S extends Record<string, any> = Record<string, any>> {
+interface HistoryOptions<S extends Record<string, any> = Record<string, any>> {
   /** Maximum number of history snapshots to retain. Default: 50 */
   limit?: number;
   /**
@@ -104,11 +84,10 @@ export interface HistoryOptions<S extends Record<string, any> = Record<string, a
    */
   shouldRecord?: boolean | ((state: S) => boolean);
 }
-
 /**
  * History manager interface for controlling undo, redo, and snapshot history.
  */
-export interface HistoryManager<S extends Record<string, any>> {
+interface HistoryManager<S extends Record<string, any>> {
   /** Reverts store state to the previous snapshot via `store.patch()`. */
   undo: () => boolean;
   /** Re-applies the next state snapshot via `store.patch()`. */
@@ -132,10 +111,11 @@ export interface HistoryManager<S extends Record<string, any>> {
   /** Unsubscribes from store change events to clean up resources. */
   destroy: () => void;
 }
-
 /**
  * A store instance augmented with history capabilities.
  */
-export type StoreWithHistory<S extends Record<string, any>> = Store<S> & {
+type StoreWithHistory<S extends Record<string, any>> = Store<S> & {
   history: HistoryManager<S>;
 };
+
+export type { HistoryOptions as H, Store as S, StoreWithHistory as a };

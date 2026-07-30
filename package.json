@@ -23,6 +23,16 @@
       "import": "./dist/react.js",
       "require": "./dist/react.cjs",
       "types": "./dist/react.d.ts"
+    },
+    "./plugins": {
+      "import": "./dist/plugins/index.js",
+      "require": "./dist/plugins/index.cjs",
+      "types": "./dist/plugins/index.d.ts"
+    },
+    "./plugins/*": {
+      "import": "./dist/plugins/*.js",
+      "require": "./dist/plugins/*.cjs",
+      "types": "./dist/plugins/*.d.ts"
     }
   },
   "scripts": {
