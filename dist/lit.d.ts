@@ -1,5 +1,5 @@
 import { ReactiveElement } from 'lit';
-import { S as Store } from './types-ClGG-8Kn.js';
+import { S as Store } from './types-ZPANn_Pb.js';
 
 /**
  * A property decorator for Lit elements that binds a property to a Store's state.

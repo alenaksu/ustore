@@ -134,6 +134,14 @@ export interface HistoryManager<S extends Record<string, any>> {
   readonly index: number;
   /** Array of recorded state snapshots. */
   readonly stack: ReadonlyArray<S>;
+  /**
+   * Registers a listener to be notified when the history stack or index changes
+   * (e.g. on undo, redo, record, clear).
+   *
+   * @param listener - Callback triggered when history changes.
+   * @returns Unsubscribe function.
+   */
+  subscribe: (listener: () => void) => () => void;
   /** Unsubscribes from store change events to clean up resources. */
   destroy: () => void;
 }

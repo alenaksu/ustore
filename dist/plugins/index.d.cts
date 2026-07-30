@@ -1,4 +1,4 @@
-import { S as Store, H as HistoryOptions, a as StoreWithHistory } from '../types-ClGG-8Kn.cjs';
+import { S as Store, H as HistoryOptions, a as StoreWithHistory } from '../types-ZPANn_Pb.cjs';
 
 /**
  * Enhances a uStore instance with state history tracking (Undo / Redo / Snapshots).
