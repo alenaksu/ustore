@@ -68,7 +68,7 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
       }
     }
 
-    if (all || changed.length) {
+    if (changed.length) {
       const event: ChangeEvent = {
         paths: all ? Object.keys(rawState) : changed,
       };
