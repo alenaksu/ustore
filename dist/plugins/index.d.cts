@@ -1,4 +1,4 @@
-import { S as Store, H as HistoryOptions, a as StoreWithHistory } from '../types-B2iYxHt0.js';
+import { S as Store, H as HistoryOptions, a as StoreWithHistory } from '../types-ClGG-8Kn.cjs';
 
 /**
  * Enhances a uStore instance with state history tracking (Undo / Redo / Snapshots).

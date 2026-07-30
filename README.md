@@ -67,6 +67,15 @@ const { state, patch, detach } = store.attach(updateUI);
 patch({ count: 10 });
 ```
 
+### 1.3 State Snapshot (`snapshot`)
+
+You can create an independent deep clone snapshot of the current store state using `store.snapshot()`:
+
+```typescript
+const currentStateSnapshot = store.snapshot();
+console.log(currentStateSnapshot);
+```
+
 ### 2. React Integration
 
 Import `useStore` to consume the store in React. Property reads are automatically tracked during the component's render execution.

@@ -2,16 +2,16 @@
 
 // src/state.ts
 var isProxyable = (value) => {
-  if (value === null || typeof value !== "object") return false;
+  if (value === null || typeof value !== 'object') return false;
   if (Array.isArray(value)) return true;
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 };
-var createProxyHandler = (options, path = "") => {
+var createProxyHandler = (options, path = '') => {
   return {
     get(target, propertyName, receiver) {
       const value = Reflect.get(target, propertyName, receiver);
-      if (typeof propertyName === "symbol") {
+      if (typeof propertyName === 'symbol') {
         return value;
       }
       const propertyPath = path ? `${path}.${propertyName}` : propertyName;
@@ -19,17 +19,19 @@ var createProxyHandler = (options, path = "") => {
       return isProxyable(value) ? createProxy(value, options, propertyPath) : value;
     },
     set(target, propertyName, newValue, receiver) {
-      if (typeof propertyName === "symbol") {
+      if (typeof propertyName === 'symbol') {
         return Reflect.set(target, propertyName, newValue, receiver);
       }
       const propertyPath = path ? `${path}.${propertyName}` : propertyName;
       options.onWrite?.(propertyPath);
       return Reflect.set(target, propertyName, newValue, receiver);
-    }
+    },
   };
 };
-var createProxy = (state, options = {}, path = "") => new Proxy(state, createProxyHandler(options, path));
-var createRevocableProxy = (state, options = {}, path = "") => Proxy.revocable(state, createProxyHandler(options, path));
+var createProxy = (state, options = {}, path = '') =>
+  new Proxy(state, createProxyHandler(options, path));
+var createRevocableProxy = (state, options = {}, path = '') =>
+  Proxy.revocable(state, createProxyHandler(options, path));
 var deepSet = (state, newState) => {
   for (const key of Object.keys(newState)) {
     if (isProxyable(newState[key]) && isProxyable(state[key])) {
@@ -77,7 +79,7 @@ var createStore = (stateInitializer) => {
     }
     if (all || changed.length) {
       const event = {
-        paths: all ? Object.keys(rawState) : changed
+        paths: all ? Object.keys(rawState) : changed,
       };
       for (const listener of listeners) {
         listener(event);
@@ -95,7 +97,7 @@ var createStore = (stateInitializer) => {
   };
   reset();
   const state = createProxy(rawState, {
-    onWrite
+    onWrite,
   });
   const attach = (handler) => {
     const readPaths = /* @__PURE__ */ new Set();
@@ -108,7 +110,7 @@ var createStore = (stateInitializer) => {
     };
     const { proxy, revoke } = createRevocableProxy(rawState, {
       onRead,
-      onWrite
+      onWrite,
     });
     let detached = false;
     const detach = () => {
@@ -149,13 +151,15 @@ var createStore = (stateInitializer) => {
   const patch = (partialState) => {
     deepSet(state, partialState);
   };
+  const snapshot = () => structuredClone(rawState);
   return {
     state,
     patch,
     reset,
+    snapshot,
     attach,
     subscribe,
-    watch
+    watch,
   };
 };
 

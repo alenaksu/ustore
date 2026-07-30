@@ -1,14 +1,6 @@
 import { HistoryManager, HistoryOptions, Store, StoreWithHistory } from '../types';
 
 /**
- * Creates a plain deep clone of a state object, unwrapping proxies.
- */
-const cloneState = <T>(obj: T): T => {
-  if (obj === null || typeof obj !== 'object') return obj;
-  return JSON.parse(JSON.stringify(obj));
-};
-
-/**
  * Enhances a uStore instance with state history tracking (Undo / Redo / Snapshots).
  *
  * @param store - The uStore instance to enhance.
@@ -23,7 +15,7 @@ export const withHistory = <S extends Record<string, any>>(
   let isPaused = false;
   let isRestoring = false;
 
-  let stack: S[] = [cloneState(store.state)];
+  let stack: S[] = [store.snapshot()];
   let index = 0;
 
   const record = () => {
@@ -39,7 +31,7 @@ export const withHistory = <S extends Record<string, any>>(
       stack = stack.slice(0, index + 1);
     }
 
-    stack.push(cloneState(store.state));
+    stack.push(store.snapshot());
     if (stack.length > limit) {
       stack.shift();
     } else {
@@ -56,7 +48,7 @@ export const withHistory = <S extends Record<string, any>>(
     index--;
     isRestoring = true;
     try {
-      store.patch(cloneState(stack[index]));
+      store.patch(stack[index]);
     } finally {
       isRestoring = false;
     }
@@ -68,7 +60,7 @@ export const withHistory = <S extends Record<string, any>>(
     index++;
     isRestoring = true;
     try {
-      store.patch(cloneState(stack[index]));
+      store.patch(stack[index]);
     } finally {
       isRestoring = false;
     }
@@ -80,7 +72,7 @@ export const withHistory = <S extends Record<string, any>>(
     redo,
     record,
     clear: () => {
-      stack = [cloneState(store.state)];
+      stack = [store.snapshot()];
       index = 0;
     },
     pause: () => {

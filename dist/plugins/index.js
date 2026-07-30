@@ -1,13 +1,9 @@
 // src/plugins/history.ts
-var cloneState = (obj) => {
-  if (obj === null || typeof obj !== 'object') return obj;
-  return JSON.parse(JSON.stringify(obj));
-};
 var withHistory = (store, options = {}) => {
   const limit = options.limit ?? 50;
   let isPaused = false;
   let isRestoring = false;
-  let stack = [cloneState(store.state)];
+  let stack = [store.snapshot()];
   let index = 0;
   const record = () => {
     if (isPaused || isRestoring) return;
@@ -18,7 +14,7 @@ var withHistory = (store, options = {}) => {
     if (index < stack.length - 1) {
       stack = stack.slice(0, index + 1);
     }
-    stack.push(cloneState(store.state));
+    stack.push(store.snapshot());
     if (stack.length > limit) {
       stack.shift();
     } else {
@@ -33,7 +29,7 @@ var withHistory = (store, options = {}) => {
     index--;
     isRestoring = true;
     try {
-      store.patch(cloneState(stack[index]));
+      store.patch(stack[index]);
     } finally {
       isRestoring = false;
     }
@@ -44,7 +40,7 @@ var withHistory = (store, options = {}) => {
     index++;
     isRestoring = true;
     try {
-      store.patch(cloneState(stack[index]));
+      store.patch(stack[index]);
     } finally {
       isRestoring = false;
     }
@@ -55,7 +51,7 @@ var withHistory = (store, options = {}) => {
     redo,
     record,
     clear: () => {
-      stack = [cloneState(store.state)];
+      stack = [store.snapshot()];
       index = 0;
     },
     pause: () => {
@@ -85,4 +81,4 @@ var withHistory = (store, options = {}) => {
 
 export { withHistory };
 //# sourceMappingURL=out.js.map
-//# sourceMappingURL=history.js.map
+//# sourceMappingURL=index.js.map

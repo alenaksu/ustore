@@ -1,13 +1,12 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: [
-    'src/store.ts',
-    'src/lit.ts',
-    'src/react.ts',
-    'src/plugins/index.ts',
-    'src/plugins/history.ts',
-  ],
+  entry: {
+    store: 'src/store.ts',
+    lit: 'src/lit.ts',
+    react: 'src/react.ts',
+    'plugins/index': 'src/plugins/index.ts',
+  },
   format: ['esm', 'cjs'],
   dts: true,
   sourcemap: true,
