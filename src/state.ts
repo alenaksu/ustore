@@ -2,14 +2,14 @@ import { StateProxyOptions } from './types';
 
 /**
  * Determines whether a value can be wrapped in a reactive proxy. Only plain objects
- * and arrays are proxyable. Custom objects, dates, maps, sets, and primitives are treated as atomic.
+ * are proxyable. Arrays, custom objects, dates, maps, sets, and primitives are treated as atomic.
  *
  * @param value - The value to check.
  * @returns True if the value is proxyable.
  */
 const isProxyable = (value: unknown): value is object => {
   if (value === null || typeof value !== 'object') return false;
-  if (Array.isArray(value)) return true;
+  if (Array.isArray(value)) return false;
 
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
