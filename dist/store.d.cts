@@ -1,11 +1,5 @@
-import { S as Store } from './types-ZPANn_Pb.cjs';
+import { S as Store } from './types-CP6UPwvI.cjs';
 
-/**
- * Creates a reactive store with a deep-reactive state container.
- *
- * @param stateInitializer - A function that returns the initial state object.
- * @returns A new Store instance.
- */
 declare const createStore: <S extends Record<string, any>>(stateInitializer: () => S) => Store<S>;
 
 export { createStore };

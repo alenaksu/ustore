@@ -1,16 +1,14 @@
-# uStore 🗃️
+# uStore
 
-uStore is a framework-agnostic reactive state manager for modern JavaScript and TypeScript applications.
-
-By leveraging ES6 Proxies, uStore tracks property read-paths at render time and schedules updates when those specific paths are mutated. This avoids full virtual DOM reconciliation and manual selector definitions.
+uStore is a framework-agnostic reactive state manager for modern JavaScript and TypeScript applications. By leveraging ES6 Proxies, uStore tracks property read-paths at render/execution time and schedules updates when those specific paths are mutated.
 
 ---
 
-## 🛠️ Usage
+## 📖 Core Store API
 
-### 1. Creating a Store
+### 1. Creating a Store (`createStore`)
 
-Define your initial state and instantiate the store. uStore works with any plain JavaScript object.
+Define your state schema and instantiate the store with a state initializer function.
 
 ```typescript
 import { createStore } from 'ustore';
@@ -36,22 +34,30 @@ export const store = createStore<AppState>(() => ({
 }));
 ```
 
-### 1.1 Resetting State (`reset`)
+### 2. Reading & Mutating State
 
-You can reset the store state back to its initial value using `store.reset()`:
+Any direct mutation to properties on `store.state` triggers reactivity for subscribers of those specific paths.
 
 ```typescript
-store.reset();
+// Reading state
+console.log(store.state.user.name);
+
+// Mutating state directly
+store.state.count++;
+store.state.user.theme = 'light';
 ```
 
-### 1.2 Patching State (`patch`)
+### 3. Core Methods Reference
 
-You can deeply update multiple properties or complex nested branches of state using `store.patch()`.
+Each store instance exposes the following methods:
 
-Unlike replacing the state object, `patch` applies a deep in-place update using partial objects, preserving proxy references and triggering precise path updates.
+#### `store.patch(partialState)`
+
+Applies a deep in-place update using partial objects.
+
+Because subscription matching in uStore is precise and mapped to exact paths, replacing a parent object entirely (such as `state.user = { name: 'Bob' }`) will not trigger nested child listeners subscribed to sub-properties (like `user.name`). Using `patch` recursively updates the nested leaf properties in-place, ensuring that all precise child subscribers correctly receive the update.
 
 ```typescript
-// Update nested or multiple state properties at once
 store.patch({
   user: {
     theme: 'light',
@@ -59,48 +65,203 @@ store.patch({
 });
 ```
 
-You can also access `patch` directly from an attachment created with `store.attach()`:
+#### `store.reset()`
+
+Resets the store's state back to its initial values (re-running the initializer function) and notifies all active subscribers.
 
 ```typescript
-const { state, patch, detach } = store.attach(updateUI);
-
-patch({ count: 10 });
+store.reset();
 ```
 
-### 1.3 State Snapshot (`snapshot`)
+#### `store.snapshot()`
 
-You can create an independent deep clone snapshot of the current store state using `store.snapshot()`:
+Creates and returns an independent, deep-cloned non-reactive snapshot of the current state.
 
 ```typescript
-const currentStateSnapshot = store.snapshot();
-console.log(currentStateSnapshot);
+const snapshot = store.snapshot();
+console.log(snapshot.user.name); // 'Alice'
 ```
 
-### 2. React Integration
+#### `store.subscribe(listener)`
 
-Import `useStore` to consume the store in React. Property reads are automatically tracked during the component's render execution.
+Registers a global listener called on every mutation. It returns an unsubscribe function.
+
+```typescript
+const unsubscribe = store.subscribe((event) => {
+  console.log('Mutated paths:', event.paths); // e.g. ["user.theme"]
+});
+
+// Unsubscribe when done
+unsubscribe();
+```
+
+#### `store.attach(handler)`
+
+Creates an active tracking session. It returns a tracked `state` proxy and a `detach` function. When properties on this proxy are read during execution, their paths are registered. The `handler` is called when any registered path changes.
+
+```typescript
+const { state, detach } = store.attach(() => {
+  console.log(`Theme changed to: ${state.user.theme}`);
+});
+
+// Read the property once to register interest
+void state.user.theme;
+
+// Disconnect the tracking when no longer needed
+detach();
+```
+
+#### `store.with(plugin)`
+
+Applies an enhancer/plugin to the store, returning the augmented store instance.
+
+---
+
+## 🔌 Plugins & Composition
+
+Core stores are lightweight and can be progressively augmented with optional capabilities using the fluent `.with(plugin)` API. Plugins are imported from `ustore/plugins` (or directly from `ustore`).
+
+### 1. Fluent Chaining
+
+`.with()` can be chained indefinitely. TypeScript automatically infers the combined type of the store at each step of the chain.
+
+```typescript
+import { createStore } from 'ustore';
+import { events, actions, history } from 'ustore/plugins';
+
+type MyEvents = {
+  'counter:incremented': { newValue: number };
+};
+
+export const store = createStore(() => ({
+  count: 0,
+}))
+  .with(events<MyEvents>())
+  .with(
+    actions((store) => ({
+      increment() {
+        store.patch({ count: store.state.count + 1 });
+        store.emit('counter:incremented', { newValue: store.state.count });
+      },
+    })),
+  )
+  .with(history());
+
+// Call custom actions
+store.actions.increment();
+
+// Listen to typed events
+store.on('counter:incremented', ({ newValue }) => {
+  console.log(`Incremented to ${newValue}`);
+});
+
+// Use undo/redo capabilities
+if (store.history.canUndo) {
+  store.history.undo();
+}
+```
+
+### 2. State History & Undo / Redo (`history`)
+
+The `history` plugin tracks state mutations and provides undo, redo, and snapshot recording.
+
+```typescript
+import { createStore } from 'ustore';
+import { history } from 'ustore/plugins';
+
+export const store = createStore(() => ({
+  count: 0,
+})).with(
+  history({
+    limit: 50, // Retain up to 50 history snapshots (default: 50)
+  }),
+);
+
+// Mutating state records a snapshot automatically
+store.state.count++;
+
+// Undo/Redo operations
+store.history.undo();
+store.history.redo();
+
+// Subscribe to history updates
+const unsubscribeHistory = store.history.subscribe(() => {
+  console.log('Undo available:', store.history.canUndo);
+});
+```
+
+#### Conditional History Recording (`shouldRecord`)
+
+Filter which state changes create history snapshots by providing a predicate function or a boolean:
+
+```typescript
+const store = createStore(() => ({
+  count: 0,
+  isDragging: false,
+})).with(
+  history({
+    // Avoid recording history states while dragging
+    shouldRecord: (state) => !state.isDragging,
+  }),
+);
+```
+
+### 3. Decoupled Types (`StoreWith`)
+
+Use the `StoreWith` helper type to define the store type expected by external functions, keeping your code split and avoiding cyclic dependencies.
+
+```typescript
+import { StoreWith, events, history } from 'ustore';
+
+interface MessagesState {
+  list: string[];
+}
+type MessagesEvents = { 'message:added': string };
+
+// Define the expected store type by specifying the required plugins
+type MessagerStore = StoreWith<
+  MessagesState,
+  [ReturnType<typeof events<MessagesEvents>>, ReturnType<typeof history>]
+>;
+
+export const messageActions = (store: MessagerStore) => ({
+  sendMessage(text: string) {
+    store.patch({ list: [...store.state.list, text] });
+    store.emit('message:added', text);
+    store.history.record();
+  },
+});
+```
+
+---
+
+## 💻 Framework Integrations
+
+### 1. React Integration
+
+Consume the store in React components using `useStore`. Property reads are automatically tracked during the component's render execution.
 
 ```tsx
 import { useStore } from 'ustore/react';
 import { store } from './store';
 
 export const Counter = () => {
-  // Reading from 'state' automatically registers subscriptions to accessed paths
+  // Accessing 'state' properties automatically registers subscriptions
   const state = useStore(store);
 
   return (
     <div>
       <p>Clicked {state.count} times</p>
-      {/* Mutating the property directly triggers a precise update */}
+      {/* Mutating directly triggers a precise update */}
       <button onClick={() => state.count++}>Increment</button>
     </div>
   );
 };
 ```
 
-### 3. Lit Integration
+### 2. Lit Integration
 
-Use the `@consumeStore` decorator to bind a property to a uStore store in a custom element. The element connects and disconnects subscriptions automatically with its lifecycle.
+Use the `@consumeStore` decorator to bind a property to a uStore instance in a custom element. Suffixing lifecycles connect and disconnect subscriptions automatically.
 
 ```typescript
 import { LitElement, html } from 'lit';
@@ -124,146 +285,33 @@ export class MyCounter extends LitElement {
 }
 ```
 
-### 4. Vanilla JS & Subscription Auditing
-
-You can register listeners to audit mutations globally or listen to general updates.
-
-```typescript
-import { store } from './store';
-
-// Listen to all state changes across the entire store
-const unsubscribe = store.subscribe((event) => {
-  console.log('Mutated paths:', event.paths); // e.g. ["user.theme", "count"]
-});
-
-// To stop listening:
-unsubscribe();
-```
-
-### 5. Watching Specific Properties or Derived State (`watch`)
-
-You can watch a specific property or a derived computed value from the store using `store.watch`.
-
-The selector function automatically tracks dependencies and triggers the listener callback _only_ when the selected value changes. The listener receives both the new value and the previous value.
-
-```typescript
-import { store } from './store';
-
-// Watch a nested property
-const unwatchName = store.watch(
-  (state) => state.user.name,
-  (name, prevName) => {
-    console.log(`User name changed from ${prevName} to ${name}`);
-  },
-);
-
-// Watch a derived/computed value
-const unwatchIsDark = store.watch(
-  (state) => state.user.theme === 'dark',
-  (isDark, prevIsDark) => {
-    console.log(`Is dark theme active changed from ${prevIsDark} to ${isDark}`);
-  },
-);
-
-// To stop watching:
-unwatchName();
-unwatchIsDark();
-```
-
----
-
-## 🔌 Plugins
-
-uStore includes optional plugins available via the `ustore/plugins` subpath export.
-
-### 1. State History & Undo / Redo (`withHistory`)
-
-You can enable state history management (Undo, Redo, and Snapshot tracking) by wrapping your store with `withHistory`.
-
-```typescript
-import { createStore } from 'ustore';
-import { withHistory } from 'ustore/plugins';
-
-export const store = withHistory(
-  createStore(() => ({
-    count: 0,
-    user: { name: 'Alice' },
-  })),
-  {
-    limit: 50, // Retain up to 50 history snapshots (default: 50)
-  },
-);
-
-// Mutating state records a snapshot automatically
-store.state.count++;
-store.state.count++;
-
-// Undo/Redo operations
-if (store.history.canUndo) {
-  store.history.undo(); // Reverts state to count: 1 and updates subscribers
-}
-
-if (store.history.canRedo) {
-  store.history.redo(); // Re-applies state to count: 2
-}
-
-// Subscribe exclusively to history updates (undo/redo availability, stack changes)
-const unsubscribeHistory = store.history.subscribe(() => {
-  undoButton.disabled = !store.history.canUndo;
-  redoButton.disabled = !store.history.canRedo;
-});
-```
-
-#### Conditional Recording (`shouldRecord`)
-
-You can filter which state changes create history snapshots by providing a predicate function or a boolean for `shouldRecord`:
-
-```typescript
-const store = withHistory(
-  createStore(() => ({
-    count: 0,
-    isDragging: false,
-  })),
-  {
-    // Ignore state snapshots during drag operations
-    shouldRecord: (state) => !state.isDragging,
-  },
-);
-```
-
 ---
 
 ## ⚠️ Constraints & Caveats
 
-To ensure correct path tracking and updates, uStore operates under a specific mental model:
+### 1. Array Operations
 
-### 1. Property Mutations & Branch Updates (`patch`)
+In uStore, arrays are treated as atomic values. Mutating individual elements or nested paths inside an array will not trigger updates. Only mutating/assigning the array reference itself triggers reactivity.
 
-uStore tracks mutations at the property level and supports both direct mutations and deep updates.
-
-- **Direct Property Mutation:** Mutate properties directly when updating individual values.
+- **Correct (Replace/Re-assign array):**
   ```typescript
-  store.state.user.name = 'Bob'; // Correct. Triggers 'user.name' listeners.
+  store.state.items = [...store.state.items, newItem];
   ```
-- **Partial & Complex Updates (`patch`):** Use `store.patch()` or `attachment.patch()` when updating multiple properties or nested branches at once without needing to re-specify existing properties.
+- **Incorrect (In-place array mutations):**
   ```typescript
-  store.patch({ user: { theme: 'light' } }); // Convenient: merges theme without overwriting user.name
+  store.state.items.push(newItem); // Will not trigger updates
+  store.state.items[0] = updatedItem; // Will not trigger updates
   ```
-- **Direct Parent Node Assignment:** Assigning a new object to a parent property (e.g. `store.state.user = { name: 'Bob', theme: 'light' }`) is fully reactive and triggers all nested subscribers correctly, as property reads automatically register interest in parent paths. Use `patch()` whenever you want to merge partial changes into nested objects instead of replacing them.
 
-### 2. No Wildcard/Hierarchical Subscriptions
+### 2. Subscription Resolution & Nesting
 
-Subscription matching is precise and O(1).
+Subscription matches are precise and $O(1)$:
 
 - A component reading `state.user.name` is subscribed **only** to the path `user.name`.
 - A component reading `state.user` (the parent object) is subscribed to `user`, but **not** to nested properties like `user.name`.
-- Mutating a nested property (e.g., writing to `state.user.name`) will **not** trigger a parent subscription on `state.user`.
+- Mutating `state.user.name` will **not** trigger a parent subscription on `state.user`.
 
-### 3. Array Operations
-
-In uStore, arrays are treated as atomic values. Therefore, only mutating the array itself (or re-assigning it) will trigger updates. Mutating individual elements or nested paths inside an array will not trigger item-level updates.
-
-To update array-based state, mutate the array reference or re-assign the array itself.
+Assigning a new object to a parent property (e.g. `store.state.user = { name: 'Bob', theme: 'light' }`) is fully reactive and triggers all nested subscribers correctly, as property reads automatically register interest in parent paths. Use `patch()` to merge partial changes into nested objects instead of replacing them.
 
 ---
 
