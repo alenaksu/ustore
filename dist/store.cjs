@@ -128,7 +128,7 @@ var createStore = (stateInitializer) => {
       }
       readPaths.clear();
     };
-    return { state: proxy, patch, detach };
+    return { state: proxy, detach };
   };
   const subscribe = (listener) => {
     listeners.add(listener);
@@ -136,31 +136,20 @@ var createStore = (stateInitializer) => {
       listeners.delete(listener);
     };
   };
-  const watch = (selector, listener) => {
-    let prevValue;
-    const { detach, state: attachedState } = attach(() => {
-      const newValue = selector(attachedState);
-      if (newValue !== prevValue) {
-        listener(newValue, prevValue);
-        prevValue = newValue;
-      }
-    });
-    prevValue = selector(attachedState);
-    return detach;
-  };
   const patch = (partialState) => {
     deepSet(state, partialState);
   };
   const snapshot = () => structuredClone(rawState);
-  return {
+  const store = {
     state,
     patch,
     reset,
     snapshot,
     attach,
     subscribe,
-    watch,
+    with: (plugin) => plugin(store),
   };
+  return store;
 };
 
 exports.createStore = createStore;

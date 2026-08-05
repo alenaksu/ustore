@@ -8,12 +8,6 @@ import {
   UpdateHandler,
 } from './types';
 
-/**
- * Creates a reactive store with a deep-reactive state container.
- *
- * @param stateInitializer - A function that returns the initial state object.
- * @returns A new Store instance.
- */
 export const createStore = <S extends Record<string, any>>(stateInitializer: () => S): Store<S> => {
   const rawState = {} as S;
 
@@ -30,7 +24,7 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
   const reset = () => {
     // Clear existing keys from rawState
     for (const key of Object.keys(rawState)) {
-      delete (rawState as any)[key];
+      delete rawState[key];
     }
 
     // Re-assign initial state properties in-place
@@ -135,7 +129,7 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
       readPaths.clear();
     };
 
-    return { state: proxy, patch, detach };
+    return { state: proxy, detach };
   };
 
   const subscribe = (listener: ChangeListener): (() => void) => {
@@ -145,38 +139,21 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
     };
   };
 
-  const watch = <T>(
-    selector: (state: S) => T,
-    listener: (value: T, prevValue: T) => void,
-  ): (() => void) => {
-    let prevValue: T;
-    const { detach, state: attachedState } = attach(() => {
-      const newValue = selector(attachedState);
-      if (newValue !== prevValue) {
-        listener(newValue, prevValue);
-        prevValue = newValue;
-      }
-    });
-
-    // Initialize the last value and invoke the handler for the first time
-    prevValue = selector(attachedState);
-
-    return detach;
-  };
-
   const patch = (partialState: DeepPartial<S>) => {
     deepSet(state, partialState);
   };
 
   const snapshot = (): S => structuredClone(rawState);
 
-  return {
+  const store: Store<S> = {
     state,
     patch,
     reset,
     snapshot,
     attach,
     subscribe,
-    watch,
+    with: <U>(plugin: (store: Store<S>) => U): U => plugin(store),
   };
+
+  return store;
 };

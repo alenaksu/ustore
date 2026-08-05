@@ -21,15 +21,25 @@ type ChangeListener = (event: ChangeEvent) => void;
 interface Attachment<S> {
   /** The tracked state proxy for a specific consumer. */
   state: S;
-  /**
-   * Deeply patches the store state with partial changes, updating properties in-place.
-   *
-   * @param partialState - A partial representation of the state structure containing properties to update.
-   */
-  patch: (partialState: Partial<S>) => void;
   /** Unsubscribes the tracked state proxy, stopping further updates to its handler. */
   detach: () => void;
 }
+type EventMap = Record<string, any>;
+interface EventEmitter<Events extends EventMap = EventMap> {
+  on<K extends keyof Events & string>(
+    eventName: K,
+    listener: (payload: Events[K]) => void,
+  ): () => void;
+  off<K extends keyof Events & string>(eventName: K, listener: (payload: Events[K]) => void): void;
+  emit<K extends keyof Events & string>(eventName: K, payload: Events[K]): void;
+}
+/**
+ * Factory function to instantiate custom store actions.
+ */
+type ActionFactory<
+  T extends Store<any> = Store<any>,
+  Actions extends Record<string, any> = Record<string, any>,
+> = (store: T) => Actions;
 /**
  * A reactive state container.
  */
@@ -67,13 +77,10 @@ interface Store<S extends Record<string, any> = {}> {
    */
   subscribe(listener: ChangeListener): () => void;
   /**
-   * Registers a listener to be notified when the value of a specific property or derived value changes.
-   *
-   * @param selector - A function that selects a property or computed value from the state.
-   * @param handler - Callback invoked with the new and previous values when the selected value changes.
-   * @returns A function to unregister the listener.
+   * Chains a plugin to the store, returning the enhanced store instance.
+   * Allows progressive capability composition with precise type inference.
    */
-  watch<T>(selector: (state: S) => T, handler: (value: T, prevValue: T) => void): () => void;
+  with<U>(plugin: (store: this) => U): U;
 }
 /**
  * Options for configuring state history tracking.
@@ -123,11 +130,12 @@ interface HistoryManager<S extends Record<string, any>> {
   /** Unsubscribes from store change events to clean up resources. */
   destroy: () => void;
 }
-/**
- * A store instance augmented with history capabilities.
- */
-type StoreWithHistory<S extends Record<string, any>> = Store<S> & {
-  history: HistoryManager<S>;
-};
 
-export type { HistoryOptions as H, Store as S, StoreWithHistory as a };
+export type {
+  ActionFactory as A,
+  EventMap as E,
+  HistoryOptions as H,
+  Store as S,
+  HistoryManager as a,
+  EventEmitter as b,
+};

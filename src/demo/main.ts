@@ -136,9 +136,8 @@ setInterval(() => {
   lastMpsMeasure = now;
 }, 500);
 
-demoStore.watch(
-  (state) => state.chaosMode,
-  (value, prevValue) => {
-    console.log(`Chaos Mode changed from ${prevValue} to ${value}`);
-  },
-);
+const { state: attachedState } = demoStore.attach(() => {
+  console.log(`Chaos Mode changed to ${attachedState.chaosMode}`);
+});
+// Access property to register tracking
+void attachedState.chaosMode;
