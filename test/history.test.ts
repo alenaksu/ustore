@@ -1,15 +1,13 @@
 import assert from 'node:assert';
 import { test } from 'node:test';
 import { createStore } from '../dist/store.js';
-import { withHistory } from '../dist/plugins/index.js';
+import { history } from '../dist/plugins/index.js';
 
 test('withHistory basic undo and redo functionality', async () => {
-  const store = withHistory(
-    createStore(() => ({
-      count: 0,
-      text: 'hello',
-    })),
-  );
+  const store = createStore(() => ({
+    count: 0,
+    text: 'hello',
+  })).with(history());
 
   assert.strictEqual(store.state.count, 0);
   assert.strictEqual(store.history.canUndo, false);
@@ -54,17 +52,16 @@ test('withHistory basic undo and redo functionality', async () => {
 });
 
 test('withHistory reactivity & watchers upon undo/redo', async () => {
-  const store = withHistory(
-    createStore(() => ({
-      name: 'Alice',
-    })),
-  );
+  const store = createStore(() => ({
+    name: 'Alice',
+  })).with(history());
 
   const watchedValues: string[] = [];
-  store.watch(
-    (s) => s.name,
-    (val) => watchedValues.push(val),
-  );
+  const { state, detach } = store.attach(() => {
+    watchedValues.push(state.name);
+  });
+  // Read name to register tracking
+  void state.name;
 
   store.state.name = 'Bob';
   await new Promise((resolve) => queueMicrotask(resolve));
@@ -76,17 +73,18 @@ test('withHistory reactivity & watchers upon undo/redo', async () => {
   assert.strictEqual(store.state.name, 'Alice');
   assert.strictEqual(watchedValues.length, 2);
   assert.strictEqual(watchedValues[1], 'Alice');
+
+  detach();
 });
 
 test('withHistory shouldRecord predicate function', async () => {
-  const store = withHistory(
-    createStore(() => ({
-      val: 0,
-      skip: false,
-    })),
-    {
+  const store = createStore(() => ({
+    val: 0,
+    skip: false,
+  })).with(
+    history({
       shouldRecord: (s) => !s.skip,
-    },
+    }),
   );
 
   store.state.val = 10;
@@ -105,10 +103,7 @@ test('withHistory shouldRecord predicate function', async () => {
 });
 
 test('withHistory limit capacity', async () => {
-  const store = withHistory(
-    createStore(() => ({ num: 0 })),
-    { limit: 3 },
-  );
+  const store = createStore(() => ({ num: 0 })).with(history({ limit: 3 }));
 
   for (let i = 1; i <= 5; i++) {
     store.state.num = i;
@@ -119,7 +114,7 @@ test('withHistory limit capacity', async () => {
 });
 
 test('withHistory pause, resume, clear, destroy', async () => {
-  const store = withHistory(createStore(() => ({ v: 0 })));
+  const store = createStore(() => ({ v: 0 })).with(history());
 
   store.history.pause();
   store.state.v = 100;
@@ -139,7 +134,7 @@ test('withHistory pause, resume, clear, destroy', async () => {
 });
 
 test('withHistory history.subscribe listener notifications', async () => {
-  const store = withHistory(createStore(() => ({ value: 0 })));
+  const store = createStore(() => ({ value: 0 })).with(history());
 
   let historyUpdatesCount = 0;
   const unsubscribeHistory = store.history.subscribe(() => {
