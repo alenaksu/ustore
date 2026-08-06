@@ -3,7 +3,7 @@
 // src/state.ts
 var isProxyable = (value) => {
   if (value === null || typeof value !== 'object') return false;
-  if (Array.isArray(value)) return false;
+  if (Array.isArray(value)) return true;
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 };

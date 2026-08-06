@@ -37,11 +37,8 @@ densitySlider.addEventListener('input', () => {
 });
 
 resetBtn.addEventListener('click', () => {
-  const cells = demoStore.state.grid.cells;
-  for (let i = 0; i < TOTAL_CELLS; i++) {
-    cells[i].value = 0;
-    cells[i].hue = 140;
-  }
+  // Reset all cells to initial state
+  demoStore.state.grid.cells = Array.from({ length: TOTAL_CELLS }, () => ({ value: 0, hue: 140 }));
   demoStore.state.count = 0;
   totalMutations = 0;
   totalMutationsLabel.textContent = '0';
