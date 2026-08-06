@@ -15,7 +15,7 @@ var history = (options = {}) => {
     const record = () => {
       if (isPaused || isRestoring) return;
       if (options.shouldRecord === false) return;
-      if (typeof options.shouldRecord === 'function' && !options.shouldRecord(store.state)) {
+      if (typeof options.shouldRecord === "function" && !options.shouldRecord(store.state)) {
         return;
       }
       if (index < stack.length - 1) {
@@ -86,7 +86,7 @@ var history = (options = {}) => {
       destroy: () => {
         unsubscribe();
         historyListeners.clear();
-      },
+      }
     };
     const enhancedStore = Object.assign(store, { history: historyManager });
     return enhancedStore;

@@ -10,8 +10,6 @@ import { S as Store } from './types-D1DOPm6A.js';
  *
  * @param store - The Store instance to track.
  */
-declare const consumeStore: <S extends Record<string, any>>(
-  store: Store<S>,
-) => <C extends ReactiveElement>(target: C, propertyKey: PropertyKey) => void;
+declare const consumeStore: <S extends Record<string, any>>(store: Store<S>) => <C extends ReactiveElement>(target: C, propertyKey: PropertyKey) => void;
 
 export { consumeStore };
