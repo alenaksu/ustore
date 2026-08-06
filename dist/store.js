@@ -32,10 +32,13 @@ var createRevocableProxy = (state, options = {}, path = '') =>
   Proxy.revocable(state, createProxyHandler(options, path));
 var deepSet = (state, newState) => {
   for (const key of Object.keys(newState)) {
-    if (isProxyable(newState[key]) && isProxyable(state[key])) {
-      deepSet(state[key], newState[key]);
+    const newValue = newState[key];
+    if (Array.isArray(newValue)) {
+      state[key] = newValue;
+    } else if (isProxyable(newValue) && isProxyable(state[key])) {
+      deepSet(state[key], newValue);
     } else {
-      state[key] = newState[key];
+      state[key] = newValue;
     }
   }
 };

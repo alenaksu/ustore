@@ -1,9 +1,9 @@
 import assert from 'node:assert';
 import { test } from 'node:test';
-import { createStore } from '../dist/store.js';
-import { history } from '../dist/plugins/index.js';
+import { createStore } from '../../dist/store.js';
+import { history } from '../../dist/plugins/index.js';
 
-test('withHistory basic undo and redo functionality', async () => {
+test('history basic undo and redo functionality', async () => {
   const store = createStore(() => ({
     count: 0,
     text: 'hello',
@@ -51,7 +51,7 @@ test('withHistory basic undo and redo functionality', async () => {
   assert.strictEqual(store.state.count, 2);
 });
 
-test('withHistory reactivity & watchers upon undo/redo', async () => {
+test('history reactivity & watchers upon undo/redo', async () => {
   const store = createStore(() => ({
     name: 'Alice',
   })).with(history());
@@ -77,7 +77,7 @@ test('withHistory reactivity & watchers upon undo/redo', async () => {
   detach();
 });
 
-test('withHistory shouldRecord predicate function', async () => {
+test('history shouldRecord predicate function', async () => {
   const store = createStore(() => ({
     val: 0,
     skip: false,
@@ -102,7 +102,7 @@ test('withHistory shouldRecord predicate function', async () => {
   assert.strictEqual(store.state.val, 0);
 });
 
-test('withHistory limit capacity', async () => {
+test('history limit capacity', async () => {
   const store = createStore(() => ({ num: 0 })).with(history({ limit: 3 }));
 
   for (let i = 1; i <= 5; i++) {
@@ -113,7 +113,7 @@ test('withHistory limit capacity', async () => {
   assert.strictEqual(store.history.stack.length, 3);
 });
 
-test('withHistory pause, resume, clear, destroy', async () => {
+test('history pause, resume, clear, destroy', async () => {
   const store = createStore(() => ({ v: 0 })).with(history());
 
   store.history.pause();
@@ -133,7 +133,7 @@ test('withHistory pause, resume, clear, destroy', async () => {
   store.history.destroy();
 });
 
-test('withHistory history.subscribe listener notifications', async () => {
+test('history.subscribe listener notifications', async () => {
   const store = createStore(() => ({ value: 0 })).with(history());
 
   let historyUpdatesCount = 0;

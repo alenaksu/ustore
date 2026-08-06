@@ -1,6 +1,7 @@
 import assert from 'node:assert';
 import { test } from 'node:test';
-import { actions, createStore, events, history } from '../dist/store.js';
+import { createStore } from '../../dist/store.js';
+import { actions, events, history } from '../../dist/plugins/index.js';
 
 test('store.with(events(), actions(), history()) composes capabilities', async () => {
   type FilterEvents = {

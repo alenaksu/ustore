@@ -291,13 +291,21 @@ export class MyCounter extends LitElement {
 
 ### 1. Array Operations
 
-Arrays follow the same exact-path subscription rules as any other value (see [Subscription Resolution & Nesting](#2-subscription-resolution--nesting)). Most components read the whole array (e.g. `state.items` to `.map()` over it) and subscribe to the `items` path, not to its indexes or `length`.
+Arrays are treated as **atomic** values by `store.patch()`. Patching an array replaces it entirely, so size changes (grow/shrink) are always reflected correctly and every subscriber of the array path (e.g. `state.items`) is notified:
+
+```typescript
+store.patch({ items: [0, 1, 2] }); // Replaces the whole array, notifies `items` subscribers
+store.patch({ items: [9, 8] }); // Shrinks the array, no stale elements are kept
+```
+
+For in-place array mutations that don't go through `patch`, the same exact-path subscription rules as any other value apply (see [Subscription Resolution & Nesting](#2-subscription-resolution--nesting)). Most components read the whole array (e.g. `state.items` to `.map()` over it) and subscribe to the `items` path, not to its indexes or `length`.
 
 In-place methods like `push` or `splice` mutate paths like `items.length` / `items.0`, not `items` itself, so they **won't** notify a component that only read `state.items`. Replacing the array does:
 
 ```typescript
 store.state.items.push(newItem); // Won't notify components reading `state.items`
-store.state.items = [...store.state.items, newItem]; // Recommended: notifies all subscribers
+store.state.items = [...store.state.items, newItem]; // Notifies all `items` subscribers
+store.patch({ items: [...store.state.items, newItem] }); // Same, via patch
 ```
 
 ### 2. Subscription Resolution & Nesting

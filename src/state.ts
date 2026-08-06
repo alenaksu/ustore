@@ -1,9 +1,8 @@
-import { StateProxyOptions } from './types';
+import { DeepPartial, StateProxyOptions } from './types';
 
 /**
- * Determines whether a value can be wrapped in a reactive proxy.
- * Plain objects and arrays are proxyable.
- * Custom objects, dates, maps, sets, and primitives are treated as atomic.
+ * Determines whether a value can be wrapped in a reactive proxy. Only plain objects
+ * are proxyable. Arrays, custom objects, dates, maps, sets, and primitives are treated as atomic.
  *
  * @param value - The value to check.
  * @returns True if the value is proxyable.
@@ -79,12 +78,22 @@ export const createRevocableProxy = <S extends object>(
  * @param state
  * @param newState
  */
-export const deepSet = <T extends Record<string, any>>(state: T, newState: T): void => {
+export const deepSet = <T extends Record<string, any>>(
+  state: T,
+  newState: DeepPartial<T>,
+): void => {
   for (const key of Object.keys(newState) as (keyof T)[]) {
-    if (isProxyable(newState[key]) && isProxyable(state[key])) {
-      deepSet(state[key], newState[key]);
+    const newValue = newState[key];
+
+    if (Array.isArray(newValue)) {
+      // Arrays are replaced atomically: merging element-wise would only notify
+      // index paths (never the array path itself) and would leave stale
+      // elements behind when the array shrinks.
+      state[key] = newValue as T[keyof T];
+    } else if (isProxyable(newValue) && isProxyable(state[key])) {
+      deepSet(state[key], newValue);
     } else {
-      state[key] = newState[key];
+      state[key] = newValue as T[keyof T];
     }
   }
 };

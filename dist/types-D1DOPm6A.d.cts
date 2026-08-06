@@ -1,5 +1,5 @@
 type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+  [P in keyof T]?: T[P] extends (infer U)[] ? U[] : T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 interface UpdateHandler {
   (): void;
@@ -52,7 +52,8 @@ interface Store<S extends Record<string, any> = {}> {
   /** Resets the store state to its initial value. */
   reset: () => void;
   /**
-   * Deeply patches the store state with partial changes, updating properties in-place.
+   * Deeply patches the store state with partial changes, updating plain objects in-place.
+   * Array values are replaced atomically (never merged element-wise).
    *
    * @param partialState - A partial representation of the state structure containing properties to update.
    */

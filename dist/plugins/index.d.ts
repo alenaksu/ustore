@@ -5,7 +5,7 @@ import {
   E as EventMap,
   b as EventEmitter,
   A as ActionFactory,
-} from '../types-CP6UPwvI.js';
+} from '../types-D1DOPm6A.js';
 
 /**
  * Adds state history capabilities (undo, redo, and snapshot tracking) to the store.
