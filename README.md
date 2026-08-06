@@ -291,17 +291,14 @@ export class MyCounter extends LitElement {
 
 ### 1. Array Operations
 
-In uStore, arrays are treated as atomic values. Mutating individual elements or nested paths inside an array will not trigger updates. Only mutating/assigning the array reference itself triggers reactivity.
+Arrays follow the same exact-path subscription rules as any other value (see [Subscription Resolution & Nesting](#2-subscription-resolution--nesting)). Most components read the whole array (e.g. `state.items` to `.map()` over it) and subscribe to the `items` path, not to its indexes or `length`.
 
-- **Correct (Replace/Re-assign array):**
-  ```typescript
-  store.state.items = [...store.state.items, newItem];
-  ```
-- **Incorrect (In-place array mutations):**
-  ```typescript
-  store.state.items.push(newItem); // Will not trigger updates
-  store.state.items[0] = updatedItem; // Will not trigger updates
-  ```
+In-place methods like `push` or `splice` mutate paths like `items.length` / `items.0`, not `items` itself, so they **won't** notify a component that only read `state.items`. Replacing the array does:
+
+```typescript
+store.state.items.push(newItem); // Won't notify components reading `state.items`
+store.state.items = [...store.state.items, newItem]; // Recommended: notifies all subscribers
+```
 
 ### 2. Subscription Resolution & Nesting
 
