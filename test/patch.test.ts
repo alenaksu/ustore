@@ -59,6 +59,66 @@ test('patch merges plain objects in place, preserving existing proxies', () => {
   assert.deepStrictEqual(store.snapshot(), { user: { name: 'Bob', age: 30 } });
 });
 
+test('arrays derived from reads can be written back without leaking proxies', () => {
+  const store = createStore(() => ({
+    points: [
+      { x: 1, y: 2 },
+      { x: 3, y: 4 },
+      { x: 5, y: 6 },
+    ],
+  }));
+
+  // filter/map/spread produce proxies of the read elements; writing them back
+  // must not leak proxies into the raw state (which would break structuredClone).
+  const next = store.state.points.filter((p) => p.x !== 3);
+  store.patch({ points: next });
+  store.state.points = store.state.points.map((p) => ({ ...p }));
+
+  assert.deepStrictEqual(store.snapshot(), {
+    points: [
+      { x: 1, y: 2 },
+      { x: 5, y: 6 },
+    ],
+  });
+});
+
+test.only('patch of a filtered array does not leak proxies into snapshot', () => {
+  const store = createStore(() => ({
+    points: [
+      { x: 1, y: 2 },
+      { x: 3, y: 4 },
+      { x: 5, y: 6 },
+    ],
+  }));
+
+  const remaining = store.state.points.filter((p) => p.x !== 3);
+  store.patch({ points: remaining });
+
+  assert.deepStrictEqual(store.snapshot(), {
+    points: [
+      { x: 1, y: 2 },
+      { x: 5, y: 6 },
+    ],
+  });
+});
+
+test('in-place array element writes notify the exact element path', async () => {
+  const store = createStore(() => ({ items: [{ name: 'a' }] }));
+
+  let calls = 0;
+  const { state, detach } = store.attach(() => {
+    calls++;
+    void state.items[0]?.name;
+  });
+  void state.items[0]?.name;
+
+  state.items[0].name = 'b';
+  await new Promise((resolve) => queueMicrotask(resolve));
+
+  assert.strictEqual(calls, 1);
+  detach();
+});
+
 test('patch replaces nested arrays and notifies their exact path', async () => {
   const store = createStore(() => ({ user: { tags: [] as string[] } }));
 

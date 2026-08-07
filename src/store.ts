@@ -1,4 +1,4 @@
-import { createProxy, createRevocableProxy, deepSet } from './state';
+import { createProxy, createRevocableProxy, deepSet, unproxy } from './state';
 import {
   Attachment,
   ChangeEvent,
@@ -140,10 +140,10 @@ export const createStore = <S extends Record<string, any>>(stateInitializer: () 
   };
 
   const patch = (partialState: DeepPartial<S>) => {
-    deepSet(state, partialState);
+    deepSet(state, unproxy(partialState));
   };
 
-  const snapshot = (): S => structuredClone(rawState);
+  const snapshot = (): S => structuredClone(unproxy(rawState));
 
   const store: Store<S> = {
     state,

@@ -1,8 +1,55 @@
 import { DeepPartial, StateProxyOptions } from './types';
 
 /**
- * Determines whether a value can be wrapped in a reactive proxy. Only plain objects
- * are proxyable. Arrays, custom objects, dates, maps, sets, and primitives are treated as atomic.
+ * Symbol marker identifying proxies created by this library.
+ */
+export const IS_PROXY = Symbol('isProxy');
+
+/**
+ * Symbol holding the raw (unproxied) target of a proxy created by this library.
+ */
+export const RAW_VALUE = Symbol('rawValue');
+
+/**
+ * Determines whether a value is a proxy created by this library, by checking the
+ * {@link IS_PROXY} symbol.
+ */
+export const isProxy = (value: unknown): boolean =>
+  !!value && !!(value as { [IS_PROXY]?: boolean })[IS_PROXY];
+
+/**
+ * Recursively resolves any proxy created by this library back to its raw target,
+ * so that the stored state never holds proxies (which would break structuredClone
+ * in snapshot() and the history plugin). Scalars are returned as-is.
+ *
+ * @param value - The value to sanitize.
+ */
+export const unproxy = <T>(value: T): T => {
+  const rawValue = isProxy(value) ? (value as { [RAW_VALUE]: T })[RAW_VALUE] : value;
+
+  if (Array.isArray(rawValue)) {
+    const result: unknown[] = [];
+    for (const item of rawValue) {
+      result.push(unproxy(item));
+    }
+    return result as unknown as T;
+  }
+
+  if (rawValue && typeof rawValue === 'object' && isProxyable(rawValue)) {
+    const result: Record<string, unknown> = {};
+    for (const key of Object.keys(rawValue)) {
+      result[key] = unproxy((rawValue as Record<string, unknown>)[key]);
+    }
+    return result as T;
+  }
+
+  return rawValue;
+};
+
+/**
+ * Determines whether a value can be wrapped in a reactive proxy. Plain objects
+ * and arrays are proxyable. Custom objects, dates, maps, sets, and primitives
+ * are treated as atomic.
  *
  * @param value - The value to check.
  * @returns True if the value is proxyable.
@@ -28,6 +75,9 @@ export const createProxyHandler = <S extends object>(
 ): ProxyHandler<S> => {
   return {
     get<P extends keyof S>(target: S, propertyName: string | symbol, receiver: unknown): S[P] {
+      if (propertyName === IS_PROXY) return true as S[P];
+      if (propertyName === RAW_VALUE) return target as S[P];
+
       const value = Reflect.get(target, propertyName, receiver) as S[P];
 
       if (typeof propertyName === 'symbol') {
